@@ -7,15 +7,11 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Colores médicos
-private val MedicalBlue = Color(0xFF2196F3)
-private val MedicalGreen = Color(0xFF4CAF50)
-private val LightBlue = Color(0xFFBBDEFB)
+// ✅ Los colores se importan automáticamente desde Color.kt
 
 private val DarkColorScheme = darkColorScheme(
     primary = MedicalBlue,
@@ -47,6 +43,7 @@ fun MediTurnTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = Typography,
         content = content
     )
 }
