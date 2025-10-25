@@ -37,7 +37,7 @@ MediTurn es una aplicación móvil desarrollada en Android con Kotlin y Jetpack 
 
 ## 🎨 Prototipo de Diseño
 
-**Figma:** [Enlace al prototipo](URL_DE_FIGMA_AQUI)
+**Figma:** https://www.figma.com/design/MAJvvF2McJeoIIlhNaqIqU/mediturn?node-id=0-1&t=XeP79zOqivzjcgPe-0
 
 ### Pantallas Diseñadas
 - 🏠 Home
