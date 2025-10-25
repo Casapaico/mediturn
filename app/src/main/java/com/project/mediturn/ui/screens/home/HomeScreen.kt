@@ -1,6 +1,8 @@
 package com.project.mediturn.ui.screens.home
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Person
@@ -12,15 +14,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.project.mediturn.data.DataSource
+import com.project.mediturn.ui.components.SpecialtyChip
 
 @OptIn(ExperimentalMaterial3Api::class)
-
 @Composable
 fun HomeScreen(
     onNavigateToSearch: () -> Unit = {},
     onNavigateToAppointments: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
 ) {
+    val specialties = DataSource.specialties.take(6) // Mostrar solo 6 especialidades
+    val patientName = DataSource.currentPatient.name.split(" ")[0]
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -41,74 +47,131 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(horizontal = 20.dp)
         ) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Saludo
             Text(
-                text = "Bienvenido a MediTurn",
-                fontSize = 24.sp,
+                text = "Hola, $patientName 👋",
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Tu salud en buenas manos",
+                text = "¿Cómo podemos ayudarte hoy?",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Botón Buscar Médicos
-            ElevatedButton(
-                onClick = onNavigateToSearch,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
+            // Botones de acción principales
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Text("Buscar Médicos", fontSize = 16.sp)
+                // Buscar Médicos
+                ElevatedCard(
+                    onClick = onNavigateToSearch,
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Buscar",
+                            modifier = Modifier.size(32.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Buscar\nMédicos",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+
+                // Mis Citas
+                ElevatedCard(
+                    onClick = onNavigateToAppointments,
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = "Citas",
+                            modifier = Modifier.size(32.dp),
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Mis\nCitas",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Especialidades
+            Text(
+                text = "Especialidades Populares",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Mis Citas
-            ElevatedButton(
-                onClick = onNavigateToAppointments,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = null,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Text("Mis Citas", fontSize = 16.sp)
+                items(specialties) { specialty ->
+                    SpecialtyChip(
+                        specialty = specialty.name,
+                        icon = specialty.iconUrl,
+                        onClick = onNavigateToSearch
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Botón Mi Perfil
+            // Botón de perfil (secundario)
             OutlinedButton(
                 onClick = onNavigateToProfile,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = null,
                     modifier = Modifier.padding(end = 8.dp)
                 )
-                Text("Mi Perfil", fontSize = 16.sp)
+                Text("Ver Mi Perfil")
             }
         }
     }

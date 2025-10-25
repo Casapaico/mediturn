@@ -1,29 +1,47 @@
 package com.project.mediturn.ui.screens.doctors
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.project.mediturn.data.DataSource
+import com.project.mediturn.ui.components.DoctorCard
+import com.project.mediturn.ui.components.EmptyState
+import com.project.mediturn.ui.components.SearchBar
+import com.project.mediturn.ui.components.SpecialtyChip
 
 @OptIn(ExperimentalMaterial3Api::class)
-
 @Composable
 fun DoctorListScreen(
     onDoctorClick: (Int) -> Unit = {},
     onNavigateBack: () -> Unit = {}
 ) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedSpecialty by remember { mutableStateOf<String?>(null) }
+    
+    val specialties = DataSource.specialties
+    
+    // Filtrar médicos según búsqueda y especialidad
+    val filteredDoctors = remember(searchQuery, selectedSpecialty) {
+        DataSource.searchDoctors(
+            query = searchQuery,
+            specialty = selectedSpecialty
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        "BÚSQUEDA Y LISTADO DE MÉDICOS",
+                        "Buscar Médicos",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -47,36 +65,60 @@ fun DoctorListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "🔍",
-                fontSize = 64.sp
+            // Buscador
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                placeholder = "Buscar por nombre o especialidad...",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
+
+            // Filtros por especialidad
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp)
+            ) {
+                items(specialties) { specialty ->
+                    SpecialtyChip(
+                        specialty = specialty.name,
+                        icon = specialty.iconUrl,
+                        isSelected = selectedSpecialty == specialty.name,
+                        onClick = {
+                            selectedSpecialty = if (selectedSpecialty == specialty.name) {
+                                null // Deseleccionar
+                            } else {
+                                specialty.name
+                            }
+                        }
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Listado de Médicos",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Aquí se mostrará la búsqueda y filtros",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(onClick = { onDoctorClick(1) }) {
-                Text("Ver Detalle Médico (temporal)")
+            // Resultados
+            if (filteredDoctors.isEmpty()) {
+                EmptyState(
+                    icon = "🔍",
+                    title = "No se encontraron médicos",
+                    message = "Intenta con otros términos de búsqueda o especialidad",
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredDoctors) { doctor ->
+                        DoctorCard(
+                            doctor = doctor,
+                            onClick = { onDoctorClick(doctor.id) }
+                        )
+                    }
+                }
             }
         }
     }
