@@ -1,10 +1,15 @@
 package com.project.mediturn.data
 
-import com.project.mediturn.data.model.*
+import com.project.mediturn.data.model.Appointment
+import com.project.mediturn.data.model.AppointmentStatus
+import com.project.mediturn.data.model.Doctor
+import com.project.mediturn.data.model.Patient
+import com.project.mediturn.data.model.Specialty
+import com.project.mediturn.data.model.TimeSlot
 import java.time.LocalDateTime
 
 object DataSource {
-    
+
     // ========== ESPECIALIDADES ==========
     val specialties = listOf(
         Specialty(1, "Cardiología", "❤️"),
@@ -161,15 +166,15 @@ object DataSource {
     )
 
     // ========== FUNCIONES AUXILIARES ==========
-    
+
     private fun generateTimeSlots(): List<TimeSlot> {
         val slots = mutableListOf<TimeSlot>()
         var id = 1
-        
+
         // Generar slots para los próximos 7 días
         for (day in 1..7) {
             val date = LocalDateTime.now().plusDays(day.toLong())
-            
+
             // Slots de mañana (9:00 - 12:00)
             for (hour in 9..11) {
                 slots.add(
@@ -187,7 +192,7 @@ object DataSource {
                     )
                 )
             }
-            
+
             // Slots de tarde (15:00 - 18:00)
             for (hour in 15..17) {
                 slots.add(
@@ -206,15 +211,15 @@ object DataSource {
                 )
             }
         }
-        
+
         return slots
     }
 
     // Funciones de búsqueda
     fun getDoctorById(id: Int): Doctor? = doctors.find { it.id == id }
-    
+
     fun getAppointmentById(id: Int): Appointment? = appointments.find { it.id == id }
-    
+
     fun searchDoctors(
         query: String = "",
         specialty: String? = null,
@@ -222,24 +227,24 @@ object DataSource {
         telemedicine: Boolean? = null
     ): List<Doctor> {
         return doctors.filter { doctor ->
-            val matchesQuery = query.isEmpty() || 
+            val matchesQuery = query.isEmpty() ||
                 doctor.name.contains(query, ignoreCase = true) ||
                 doctor.specialty.contains(query, ignoreCase = true)
-            
+
             val matchesSpecialty = specialty == null || doctor.specialty == specialty
             val matchesCity = city == null || doctor.city == city
             val matchesTelemedicine = telemedicine == null || doctor.availableForTeleconsultation == telemedicine
-            
+
             matchesQuery && matchesSpecialty && matchesCity && matchesTelemedicine
         }
     }
-    
+
     fun getUpcomingAppointments(): List<Appointment> {
         return appointments
             .filter { it.dateTime.isAfter(LocalDateTime.now()) }
             .sortedBy { it.dateTime }
     }
-    
+
     fun getPastAppointments(): List<Appointment> {
         return appointments
             .filter { it.dateTime.isBefore(LocalDateTime.now()) }

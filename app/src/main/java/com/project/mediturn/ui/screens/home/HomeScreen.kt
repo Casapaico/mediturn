@@ -1,12 +1,8 @@
 package com.project.mediturn.ui.screens.home
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -15,16 +11,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.project.mediturn.data.DataSource
-import com.project.mediturn.ui.components.SpecialtyChip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToSearch: () -> Unit = {},
     onNavigateToAppointments: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToBookAppointment: () -> Unit = {}
 ) {
-    val specialties = DataSource.specialties.take(6) // Mostrar solo 6 especialidades
     val patientName = DataSource.currentPatient.name.split(" ")[0]
 
     Scaffold(
@@ -47,10 +42,10 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 20.dp)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Saludo
             Text(
                 text = "Hola, $patientName 👋",
@@ -62,117 +57,158 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "¿Cómo podemos ayudarte hoy?",
+                text = "¿Qué deseas hacer hoy?",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            // Botones de acción principales
-            Row(
+            // Grid de 4 botones (2x2)
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Buscar Médicos
-                ElevatedCard(
-                    onClick = onNavigateToSearch,
-                    modifier = Modifier.weight(1f),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
+                // Primera fila: MI PERFIL y BÚSQUEDA
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Buscar",
-                            modifier = Modifier.size(32.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Buscar\nMédicos",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
+                    // 1. MI PERFIL
+                    MenuButton(
+                        icon = Icons.Default.Person,
+                        title = "MI PERFIL",
+                        subtitle = "Ver información",
+                        onClick = onNavigateToProfile,
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        iconColor = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // 2. BÚSQUEDA
+                    MenuButton(
+                        icon = Icons.Default.Search,
+                        title = "BÚSQUEDA",
+                        subtitle = "Buscar médicos",
+                        onClick = onNavigateToSearch,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        iconColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
-                // Mis Citas
-                ElevatedCard(
-                    onClick = onNavigateToAppointments,
-                    modifier = Modifier.weight(1f),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    )
+                // Segunda fila: AGENDAR CITA y MIS CITAS
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = "Citas",
-                            modifier = Modifier.size(32.dp),
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Mis\nCitas",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
+                    // 3. AGENDAR CITA
+                    MenuButton(
+                        icon = Icons.Default.AddCircle,
+                        title = "AGENDAR CITA",
+                        subtitle = "Nueva cita",
+                        onClick = onNavigateToBookAppointment,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        iconColor = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // 4. MIS CITAS
+                    MenuButton(
+                        icon = Icons.Default.CalendarMonth,
+                        title = "MIS CITAS",
+                        subtitle = "Ver calendario",
+                        onClick = onNavigateToAppointments,
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        iconColor = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Especialidades
+            // Mensaje de ayuda
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = "Selecciona una opción para comenzar",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MenuButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    containerColor: androidx.compose.ui.graphics.Color,
+    iconColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = modifier.height(140.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = containerColor
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 4.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = iconColor,
+                modifier = Modifier.size(48.dp)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             Text(
-                text = "Especialidades Populares",
-                fontSize = 18.sp,
+                text = title,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(specialties) { specialty ->
-                    SpecialtyChip(
-                        specialty = specialty.name,
-                        icon = specialty.iconUrl,
-                        onClick = onNavigateToSearch
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Botón de perfil (secundario)
-            OutlinedButton(
-                onClick = onNavigateToProfile,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Text("Ver Mi Perfil")
-            }
+            Text(
+                text = subtitle,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

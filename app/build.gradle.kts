@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.project.mediturn"
-        minSdk = 24
+        minSdk = 26  // ✅ CAMBIADO DE 24 A 26 (para java.time)
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -40,7 +40,7 @@ android {
 }
 
 dependencies {
-// Compose BOM
+    // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")

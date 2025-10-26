@@ -49,7 +49,7 @@ fun NavGraph(
             )
         }
 
-        // ========== HOME ==========
+        // ========== HOME (4 BOTONES) ==========
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToSearch = {
@@ -60,11 +60,17 @@ fun NavGraph(
                 },
                 onNavigateToProfile = {
                     navController.navigate(Screen.Profile.route)
+                },
+                onNavigateToBookAppointment = {
+                    // Agendar Cita sin médico preseleccionado
+                    // Como BookAppointmentScreen requiere doctorId (no opcional),
+                    // enviamos 1 como placeholder (puedes cambiarlo a 0 si modificas BookAppointmentScreen)
+                    navController.navigate(Screen.BookAppointment.createRoute(1))
                 }
             )
         }
 
-        // ========== MÉDICOS ==========
+        // ========== BÚSQUEDA DE MÉDICOS ==========
         composable(Screen.DoctorList.route) {
             DoctorListScreen(
                 onDoctorClick = { doctorId ->
@@ -94,14 +100,14 @@ fun NavGraph(
             )
         }
 
-        // ========== CITAS ==========
+        // ========== AGENDAR CITA ==========
         composable(
             route = Screen.BookAppointment.route,
             arguments = listOf(
                 navArgument("doctorId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
-            val doctorId = backStackEntry.arguments?.getInt("doctorId") ?: 0
+            val doctorId = backStackEntry.arguments?.getInt("doctorId") ?: 1
             BookAppointmentScreen(
                 doctorId = doctorId,
                 onNavigateBack = {
@@ -115,6 +121,7 @@ fun NavGraph(
             )
         }
 
+        // ========== MIS CITAS ==========
         composable(Screen.MyAppointments.route) {
             MyAppointmentsScreen(
                 onAppointmentClick = { appointmentId ->
