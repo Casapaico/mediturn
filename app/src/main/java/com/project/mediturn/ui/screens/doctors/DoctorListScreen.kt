@@ -70,7 +70,7 @@ fun DoctorListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Barra de búsqueda con botón de filtro
+            // Barra de búsqueda con boton de filtro
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
