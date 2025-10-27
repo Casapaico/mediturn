@@ -1,39 +1,46 @@
 package com.project.mediturn.data.repository
 
-import com.project.mediturn.data.DataSource
+import com.project.mediturn.data.local.AppointmentDao
+import com.project.mediturn.data.local.DoctorDao
 import com.project.mediturn.data.model.Appointment
 import com.project.mediturn.data.model.AppointmentStatus
-import kotlinx.coroutines.delay
+import com.project.mediturn.data.model.AppointmentWithDoctor
+import kotlinx.coroutines.flow.Flow
 import java.util.Date
 
-class AppointmentRepository {
-    private var mockAppointments = DataSource.appointments.toMutableList()
-
-    suspend fun getAllAppointments(): List<Appointment> {
-        delay(800)
-        return mockAppointments
+class AppointmentRepository(
+    private val appointmentDao: AppointmentDao,
+    private val doctorDao: DoctorDao
+) {
+    fun getAllAppointments(): Flow<List<Appointment>> {
+        return appointmentDao.getAllAppointments()
     }
 
-    suspend fun getUpcomingAppointments(): List<Appointment> {
-        delay(600)
-        val now = Date()
-        return mockAppointments.filter {
-            it.dateTime.after(now) && it.status != AppointmentStatus.CANCELLED
-        }
+    fun getAppointmentsByPatient(patientId: Int): Flow<List<Appointment>> {
+        return appointmentDao.getAppointmentsByPatient(patientId)
     }
 
-    suspend fun getPastAppointments(): List<Appointment> {
-        delay(600)
-        val now = Date()
-        return mockAppointments.filter {
-            it.dateTime.before(now) || it.status == AppointmentStatus.CANCELLED
+    fun getAppointmentsWithDoctor(patientId: Int): Flow<List<AppointmentWithDoctor>> {
+        return appointmentDao.getAppointmentsWithDoctor(patientId)
+    }
+
+    suspend fun getAppointmentById(id: Int): Appointment? {
+        return appointmentDao.getAppointmentById(id)
+    }
+
+    suspend fun getAppointmentWithDoctor(id: Int): AppointmentWithDoctor? {
+        val appointment = appointmentDao.getAppointmentById(id)
+        return if (appointment != null) {
+            val doctor = doctorDao.getDoctorById(appointment.doctorId)
+            doctor?.let { AppointmentWithDoctor(appointment, it) }
+        } else {
+            null
         }
     }
 
     suspend fun bookAppointment(appointment: Appointment): Boolean {
-        delay(1000)
         return try {
-            mockAppointments.add(appointment)
+            appointmentDao.insertAppointment(appointment)
             true
         } catch (e: Exception) {
             false
@@ -41,12 +48,11 @@ class AppointmentRepository {
     }
 
     suspend fun cancelAppointment(appointmentId: Int): Boolean {
-        delay(500)
         return try {
-            val appointment = mockAppointments.find { it.id == appointmentId }
+            val appointment = appointmentDao.getAppointmentById(appointmentId)
             appointment?.let {
-                val index = mockAppointments.indexOf(it)
-                mockAppointments[index] = it.copy(status = AppointmentStatus.CANCELLED)
+                val updatedAppointment = it.copy(status = AppointmentStatus.CANCELLED)
+                appointmentDao.updateAppointment(updatedAppointment)
             }
             true
         } catch (e: Exception) {
@@ -54,8 +60,24 @@ class AppointmentRepository {
         }
     }
 
-    suspend fun getAppointmentById(id: Int): Appointment? {
-        delay(300)
-        return mockAppointments.find { it.id == id }
+    suspend fun confirmAppointment(appointmentId: Int): Boolean {
+        return try {
+            val appointment = appointmentDao.getAppointmentById(appointmentId)
+            appointment?.let {
+                val updatedAppointment = it.copy(status = AppointmentStatus.CONFIRMED)
+                appointmentDao.updateAppointment(updatedAppointment)
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun getUpcomingAppointments(currentTime: Date): Flow<List<Appointment>> {
+        return appointmentDao.getUpcomingAppointments(currentTime)
+    }
+
+    fun getPastAppointments(currentTime: Date): Flow<List<Appointment>> {
+        return appointmentDao.getPastAppointments(currentTime)
     }
 }
