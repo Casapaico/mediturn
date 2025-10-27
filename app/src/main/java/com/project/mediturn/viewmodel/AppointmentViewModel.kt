@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.Date
 
 data class AppointmentState(
@@ -87,10 +88,9 @@ class AppointmentViewModel : ViewModel() {
         _bookAppointmentState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             try {
-                // Simular creación de cita
                 val newAppointment = Appointment(
                     id = (DataSource.appointments.maxOfOrNull { it.id } ?: 0) + 1,
-                    patientId = 1, // ID del paciente actual
+                    patientId = 1,
                     doctor = doctor,
                     dateTime = dateTime,
                     reason = reason,
@@ -112,6 +112,8 @@ class AppointmentViewModel : ViewModel() {
                         appointments = state.appointments + newAppointment
                     )
                 }
+
+                loadAppointments()
             } catch (e: Exception) {
                 _bookAppointmentState.update {
                     it.copy(
@@ -126,7 +128,6 @@ class AppointmentViewModel : ViewModel() {
     fun cancelAppointment(appointmentId: Int) {
         viewModelScope.launch {
             try {
-                // Simular cancelación de cita
                 val updatedAppointments = _appointmentState.value.appointments.map { appointment ->
                     if (appointment.id == appointmentId) {
                         appointment.copy(status = AppointmentStatus.CANCELLED)
@@ -141,8 +142,7 @@ class AppointmentViewModel : ViewModel() {
                         successMessage = "Cita cancelada exitosamente"
                     )
                 }
-
-                loadAppointments() // Recargar para actualizar las listas
+                loadAppointments()
             } catch (e: Exception) {
                 _appointmentState.update {
                     it.copy(error = "Error al cancelar cita: ${e.message}")
@@ -159,9 +159,10 @@ class AppointmentViewModel : ViewModel() {
         _bookAppointmentState.update {
             it.copy(
                 selectedDate = date,
-                selectedTimeSlot = null // Reset time slot when date changes
+                selectedTimeSlot = null
             )
         }
+        loadAvailableTimeSlots(date)
     }
 
     fun setSelectedTimeSlot(timeSlot: TimeSlot) {
@@ -174,6 +175,24 @@ class AppointmentViewModel : ViewModel() {
 
     fun setIsTelemedicine(isTelemedicine: Boolean) {
         _bookAppointmentState.update { it.copy(isTelemedicine = isTelemedicine) }
+    }
+
+    private fun loadAvailableTimeSlots(date: Date) {
+        val calendar = Calendar.getInstance()
+        calendar.time = date
+
+        val availableSlots = DataSource.doctors
+            .flatMap { it.availableSlots }
+            .filter { slot ->
+                val slotCalendar = Calendar.getInstance()
+                slotCalendar.time = slot.dateTime
+                slotCalendar.get(Calendar.DAY_OF_YEAR) == calendar.get(Calendar.DAY_OF_YEAR) &&
+                        slotCalendar.get(Calendar.YEAR) == calendar.get(Calendar.YEAR) &&
+                        slot.isAvailable
+            }
+            .take(6) // Limitar a 6 horarios para demo
+
+        _bookAppointmentState.update { it.copy(availableTimeSlots = availableSlots) }
     }
 
     fun clearError() {
