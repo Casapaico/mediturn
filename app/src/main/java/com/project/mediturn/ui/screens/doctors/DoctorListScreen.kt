@@ -8,37 +8,32 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.project.mediturn.data.DataSource
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.project.mediturn.ui.components.DoctorCard
 import com.project.mediturn.ui.components.EmptyState
 import com.project.mediturn.ui.components.SearchBar
 import com.project.mediturn.ui.components.SpecialtyChip
+import com.project.mediturn.viewmodel.DoctorViewModel
 
 @Composable
 fun DoctorListScreen(
-    onDoctorClick: (Int) -> Unit
+    onDoctorClick: (Int) -> Unit,
+    viewModel: DoctorViewModel = viewModel()
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedSpecialty by remember { mutableStateOf<String?>(null) }
+    val state by viewModel.state.collectAsState()
 
-    val filteredDoctors = DataSource.doctors.filter { doctor ->
-        val matchesSearch = searchQuery.isEmpty() ||
-                doctor.name.contains(searchQuery, ignoreCase = true) ||
-                doctor.specialty.contains(searchQuery, ignoreCase = true)
-
-        val matchesSpecialty = selectedSpecialty == null ||
-                doctor.specialty == selectedSpecialty
-
-        matchesSearch && matchesSpecialty
+    LaunchedEffect(Unit) {
+        viewModel.loadDoctors()
     }
 
     Column(
@@ -54,8 +49,8 @@ fun DoctorListScreen(
 
         // Barra de búsqueda
         SearchBar(
-            query = searchQuery,
-            onQueryChange = { searchQuery = it },
+            query = state.searchQuery,
+            onQueryChange = { viewModel.searchDoctors(it) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
@@ -71,41 +66,64 @@ fun DoctorListScreen(
             SpecialtyChip(
                 specialty = "Todos",
                 emoji = "👨‍⚕️",
-                isSelected = selectedSpecialty == null,
-                onSelected = { selectedSpecialty = null }
+                isSelected = state.selectedSpecialty == null,
+                onSelected = { viewModel.filterBySpecialty(null) }
             )
-            DataSource.specialties.take(4).forEach { specialty ->
+            viewModel.getSpecialties().take(4).forEach { specialty ->
                 SpecialtyChip(
                     specialty = specialty.name,
                     emoji = specialty.iconUrl,
-                    isSelected = selectedSpecialty == specialty.name,
-                    onSelected = { selectedSpecialty = specialty.name }
+                    isSelected = state.selectedSpecialty?.id == specialty.id,
+                    onSelected = { viewModel.filterBySpecialty(specialty) }
                 )
             }
         }
 
-        // Lista de médicos
-        if (filteredDoctors.isEmpty()) {
-            EmptyState(
-                emoji = "🔍",
-                title = "No se encontraron médicos",
-                description = "Intenta con otros términos de búsqueda"
-            )
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(filteredDoctors) { doctor ->
-                    DoctorCard(
-                        name = doctor.name,
-                        specialty = doctor.specialty,
-                        rating = doctor.rating,
-                        experience = doctor.yearsOfExperience,
-                        price = doctor.consultationPrice,
-                        photoUrl = doctor.photoUrl,
-                        isTelemedicineAvailable = doctor.availableForTeleconsultation,
-                        onCardClick = { onDoctorClick(doctor.id) }
+        when {
+            state.isLoading -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Text(
+                        text = "Cargando médicos...",
+                        modifier = Modifier.padding(top = 16.dp)
                     )
+                }
+            }
+            state.error != null -> {
+                EmptyState(
+                    emoji = "😵",
+                    title = "Error al cargar",
+                    description = state.error ?: "Ha ocurrido un error"
+                )
+            }
+            state.filteredDoctors.isEmpty() -> {
+                EmptyState(
+                    emoji = "🔍",
+                    title = "No se encontraron médicos",
+                    description = "Intenta con otros términos de búsqueda"
+                )
+            }
+            else -> {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // ✅ CORRECCIÓN: Usar items() con la lista directamente
+                    items(state.filteredDoctors) { doctor ->
+                        DoctorCard(
+                            name = doctor.name,
+                            specialty = doctor.specialty,
+                            rating = doctor.rating,
+                            experience = doctor.yearsOfExperience,
+                            price = doctor.consultationPrice,
+                            photoUrl = doctor.photoUrl,
+                            isTelemedicineAvailable = doctor.availableForTeleconsultation,
+                            onCardClick = { onDoctorClick(doctor.id) }
+                        )
+                    }
                 }
             }
         }
