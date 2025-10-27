@@ -1,9 +1,9 @@
 package com.project.mediturn.data.model
 
-import java.time.LocalDateTime
+import java.util.Date
 
 data class TimeSlot(
     val id: Int,
-    val dateTime: LocalDateTime,
+    val dateTime: Date,
     val isAvailable: Boolean
 )

@@ -1,7 +1,11 @@
 package com.project.mediturn.data.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "doctor")
 data class Doctor(
-    val id: Int,
+    @PrimaryKey val id: Int,
     val name: String,
     val specialty: String,
     val department: String,
@@ -13,6 +17,5 @@ data class Doctor(
     val collegiateCertificate: String,
     val availableForTeleconsultation: Boolean,
     val city: String,
-    val consultationPrice: Double,
-    val availableSlots: List<TimeSlot> = emptyList()
+    val consultationPrice: Double
 )

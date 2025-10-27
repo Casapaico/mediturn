@@ -1,16 +1,19 @@
 package com.project.mediturn.data.model
 
-import java.time.LocalDateTime
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import java.util.Date
 
+@Entity(tableName = "appointment")
 data class Appointment(
-    val id: Int,
+    @PrimaryKey val id: Int,
     val patientId: Int,
-    val doctor: Doctor,
-    val dateTime: LocalDateTime,
+    val doctorId: Int,
+    val dateTime: Date,
     val reason: String,
     val isTelemedicine: Boolean,
     val status: AppointmentStatus,
-    val createdAt: LocalDateTime
+    val createdAt: Date
 )
 
 enum class AppointmentStatus {
