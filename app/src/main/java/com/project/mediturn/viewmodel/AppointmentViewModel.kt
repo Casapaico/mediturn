@@ -2,18 +2,18 @@ package com.project.mediturn.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.project.mediturn.data.DataSource
 import com.project.mediturn.data.model.Appointment
 import com.project.mediturn.data.model.AppointmentStatus
 import com.project.mediturn.data.model.Doctor
 import com.project.mediturn.data.model.TimeSlot
+import com.project.mediturn.data.repository.AppointmentRepository
+import com.project.mediturn.data.repository.TimeSlotRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Calendar
-import java.util.Date
+import java.util.*
 
 data class AppointmentState(
     val appointments: List<Appointment> = emptyList(),
@@ -35,7 +35,10 @@ data class BookAppointmentState(
     val error: String? = null
 )
 
-class AppointmentViewModel : ViewModel() {
+class AppointmentViewModel(
+    private val appointmentRepository: AppointmentRepository,
+    private val timeSlotRepository: TimeSlotRepository
+) : ViewModel() {
     private val _appointmentState = MutableStateFlow(AppointmentState())
     val appointmentState: StateFlow<AppointmentState> = _appointmentState.asStateFlow()
 
@@ -50,23 +53,18 @@ class AppointmentViewModel : ViewModel() {
         _appointmentState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             try {
-                val appointments = DataSource.appointments
-                val now = Date()
-
-                val upcoming = appointments.filter {
-                    it.dateTime.after(now) && it.status != AppointmentStatus.CANCELLED
-                }
-                val past = appointments.filter {
-                    it.dateTime.before(now) || it.status == AppointmentStatus.CANCELLED
-                }
-
-                _appointmentState.update {
-                    it.copy(
-                        appointments = appointments,
-                        upcomingAppointments = upcoming,
-                        pastAppointments = past,
-                        isLoading = false
-                    )
+                val currentTime = Date()
+                appointmentRepository.getUpcomingAppointments(currentTime).collect { upcoming ->
+                    appointmentRepository.getPastAppointments(currentTime).collect { past ->
+                        _appointmentState.update {
+                            it.copy(
+                                appointments = upcoming + past,
+                                upcomingAppointments = upcoming,
+                                pastAppointments = past,
+                                isLoading = false
+                            )
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 _appointmentState.update {
@@ -80,7 +78,7 @@ class AppointmentViewModel : ViewModel() {
     }
 
     fun bookAppointment(
-        doctor: Doctor,
+        doctorId: Int,
         dateTime: Date,
         reason: String,
         isTelemedicine: Boolean
@@ -89,9 +87,9 @@ class AppointmentViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val newAppointment = Appointment(
-                    id = (DataSource.appointments.maxOfOrNull { it.id } ?: 0) + 1,
+                    id = (System.currentTimeMillis() % Int.MAX_VALUE).toInt(),
                     patientId = 1,
-                    doctor = doctor,
+                    doctorId = doctorId,
                     dateTime = dateTime,
                     reason = reason,
                     isTelemedicine = isTelemedicine,
@@ -99,21 +97,29 @@ class AppointmentViewModel : ViewModel() {
                     createdAt = Date()
                 )
 
-                _bookAppointmentState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = null
-                    )
-                }
+                val success = appointmentRepository.bookAppointment(newAppointment)
 
-                _appointmentState.update { state ->
-                    state.copy(
-                        successMessage = "Cita agendada exitosamente",
-                        appointments = state.appointments + newAppointment
-                    )
+                if (success) {
+                    _bookAppointmentState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = null
+                        )
+                    }
+                    _appointmentState.update { state ->
+                        state.copy(
+                            successMessage = "Cita agendada exitosamente"
+                        )
+                    }
+                    loadAppointments()
+                } else {
+                    _bookAppointmentState.update {
+                        it.copy(
+                            error = "Error al agendar la cita",
+                            isLoading = false
+                        )
+                    }
                 }
-
-                loadAppointments()
             } catch (e: Exception) {
                 _bookAppointmentState.update {
                     it.copy(
@@ -128,21 +134,19 @@ class AppointmentViewModel : ViewModel() {
     fun cancelAppointment(appointmentId: Int) {
         viewModelScope.launch {
             try {
-                val updatedAppointments = _appointmentState.value.appointments.map { appointment ->
-                    if (appointment.id == appointmentId) {
-                        appointment.copy(status = AppointmentStatus.CANCELLED)
-                    } else {
-                        appointment
+                val success = appointmentRepository.cancelAppointment(appointmentId)
+                if (success) {
+                    _appointmentState.update {
+                        it.copy(
+                            successMessage = "Cita cancelada exitosamente"
+                        )
+                    }
+                    loadAppointments()
+                } else {
+                    _appointmentState.update {
+                        it.copy(error = "Error al cancelar la cita")
                     }
                 }
-
-                _appointmentState.update {
-                    it.copy(
-                        appointments = updatedAppointments,
-                        successMessage = "Cita cancelada exitosamente"
-                    )
-                }
-                loadAppointments()
             } catch (e: Exception) {
                 _appointmentState.update {
                     it.copy(error = "Error al cancelar cita: ${e.message}")
@@ -178,21 +182,11 @@ class AppointmentViewModel : ViewModel() {
     }
 
     private fun loadAvailableTimeSlots(date: Date) {
-        val calendar = Calendar.getInstance()
-        calendar.time = date
-
-        val availableSlots = DataSource.doctors
-            .flatMap { it.availableSlots }
-            .filter { slot ->
-                val slotCalendar = Calendar.getInstance()
-                slotCalendar.time = slot.dateTime
-                slotCalendar.get(Calendar.DAY_OF_YEAR) == calendar.get(Calendar.DAY_OF_YEAR) &&
-                        slotCalendar.get(Calendar.YEAR) == calendar.get(Calendar.YEAR) &&
-                        slot.isAvailable
-            }
-            .take(6) // Limitar a 6 horarios para demo
-
-        _bookAppointmentState.update { it.copy(availableTimeSlots = availableSlots) }
+        val selectedDoctor = _bookAppointmentState.value.selectedDoctor
+        selectedDoctor?.let { doctor ->
+            val availableSlots = timeSlotRepository.getAvailableTimeSlotsForDoctor(doctor.id, date)
+            _bookAppointmentState.update { it.copy(availableTimeSlots = availableSlots) }
+        }
     }
 
     fun clearError() {
