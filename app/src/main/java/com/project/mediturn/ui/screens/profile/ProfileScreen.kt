@@ -1,4 +1,4 @@
-package com.mediturn.ui.screens
+package com.project.mediturn.ui.screens.profile
 
 import androidx.compose.runtime.Composable
 
