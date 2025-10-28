@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,39 +14,49 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.swiperefresh.*
 import com.project.mediturn.data.DataSource
 import com.project.mediturn.ui.components.DoctorCard
 import com.project.mediturn.ui.components.EmptyState
 import com.project.mediturn.ui.components.SearchBar
+import com.project.mediturn.viewmodel.DoctorUiState
+import com.project.mediturn.viewmodel.DoctorViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorListScreen(
     onDoctorClick: (Int) -> Unit = {},
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    viewModel: DoctorViewModel = viewModel()
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedSpecialties by remember { mutableStateOf(setOf<String>()) }
+    // Estados del ViewModel
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedSpecialties by viewModel.selectedSpecialties.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Estados locales de UI
+    val snackbarHostState = remember { SnackbarHostState() }
     var showFilterDialog by remember { mutableStateOf(false) }
+    var showAdvancedFilters by remember { mutableStateOf(false) }
+
+    // Filtros adicionales
+    var filterCity by remember { mutableStateOf<String?>(null) }
+    var filterTelemedicine by remember { mutableStateOf<Boolean?>(null) }
 
     val specialties = DataSource.specialties
+    val cities = remember { DataSource.doctors.map { it.city }.distinct().sorted() }
 
-    // Filtrar mÃ©dicos segÃºn bÃºsqueda y especialidades seleccionadas
-    val filteredDoctors = remember(searchQuery, selectedSpecialties) {
-        DataSource.searchDoctors(
-            query = searchQuery,
-            specialty = if (selectedSpecialties.isEmpty()) null else selectedSpecialties.firstOrNull()
-        ).filter { doctor ->
-            selectedSpecialties.isEmpty() || selectedSpecialties.contains(doctor.specialty)
-        }
-    }
+    // Estado de refresh
+    val isRefreshing = uiState is DoctorUiState.Loading
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        "BÃºsqueda de MÃ©dicos",
+                        "Búsqueda de Médicos",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -63,6 +74,9 @@ fun DoctorListScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { paddingValues ->
         Column(
@@ -70,7 +84,7 @@ fun DoctorListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Barra de bÃºsqueda con boton de filtro
+            // Barra de búsqueda con botones de filtro
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -78,15 +92,14 @@ fun DoctorListScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Buscador
                 SearchBar(
                     query = searchQuery,
-                    onQueryChange = { searchQuery = it },
+                    onQueryChange = { viewModel.updateSearchQuery(it) },
                     placeholder = "Buscar por nombre o especialidad...",
                     modifier = Modifier.weight(1f)
                 )
 
-                // BotÃ³n de filtro (dropdown)
+                // Botón de filtro por especialidades
                 BadgedBox(
                     badge = {
                         if (selectedSpecialties.isNotEmpty()) {
@@ -110,10 +123,39 @@ fun DoctorListScreen(
                         )
                     }
                 }
+
+                // Botón de filtros avanzados
+                BadgedBox(
+                    badge = {
+                        val activeFilters = listOfNotNull(
+                            filterCity,
+                            if (filterTelemedicine != null) "telemedicine" else null
+                        ).size
+                        if (activeFilters > 0) {
+                            Badge {
+                                Text(activeFilters.toString())
+                            }
+                        }
+                    }
+                ) {
+                    IconButton(
+                        onClick = { showAdvancedFilters = true },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        ),
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = "Filtros avanzados",
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
             }
 
             // Mostrar filtros activos
-            if (selectedSpecialties.isNotEmpty()) {
+            if (selectedSpecialties.isNotEmpty() || filterCity != null || filterTelemedicine != null) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -122,23 +164,54 @@ fun DoctorListScreen(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                     )
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = "Filtrando por: ${selectedSpecialties.joinToString(", ")}",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.weight(1f)
-                        )
-                        TextButton(
-                            onClick = { selectedSpecialties = setOf() }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Limpiar", fontSize = 12.sp)
+                            Text(
+                                text = "Filtros activos:",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            TextButton(
+                                onClick = {
+                                    viewModel.clearFilters()
+                                    filterCity = null
+                                    filterTelemedicine = null
+                                }
+                            ) {
+                                Text("Limpiar todo", fontSize = 12.sp)
+                            }
+                        }
+
+                        if (selectedSpecialties.isNotEmpty()) {
+                            Text(
+                                text = "Especialidades: ${selectedSpecialties.joinToString(", ")}",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                        if (filterCity != null) {
+                            Text(
+                                text = "Ciudad: $filterCity",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                        if (filterTelemedicine != null) {
+                            Text(
+                                text = "Solo teleconsulta",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
                         }
                     }
                 }
@@ -146,32 +219,79 @@ fun DoctorListScreen(
 
             HorizontalDivider()
 
-            // Resultados
-            if (filteredDoctors.isEmpty()) {
-                EmptyState(
-                    icon = "ðŸ”",
-                    title = "No se encontraron mÃ©dicos",
-                    message = "Intenta con otros tÃ©rminos de bÃºsqueda o filtros",
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(filteredDoctors) { doctor ->
-                        DoctorCard(
-                            doctor = doctor,
-                            onClick = { onDoctorClick(doctor.id) }
+            // Resultados con pull-to-refresh (simulado con Box)
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (val state = uiState) {
+                    is DoctorUiState.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    is DoctorUiState.Success -> {
+                        // Aplicar filtros adicionales
+                        val filteredDoctors = state.doctors.filter { doctor ->
+                            val matchesCity = filterCity == null || doctor.city == filterCity
+                            val matchesTelemedicine = filterTelemedicine == null ||
+                                    doctor.availableForTeleconsultation == filterTelemedicine
+                            matchesCity && matchesTelemedicine
+                        }
+
+                        if (filteredDoctors.isEmpty()) {
+                            EmptyState(
+                                icon = "🔍",
+                                title = "No se encontraron médicos",
+                                message = "Intenta con otros términos de búsqueda o filtros",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                item {
+                                    Text(
+                                        text = "${filteredDoctors.size} médico(s) encontrado(s)",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                items(filteredDoctors) { doctor ->
+                                    DoctorCard(
+                                        doctor = doctor,
+                                        onClick = { onDoctorClick(doctor.id) }
+                                    )
+                                }
+
+                                item {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+                            }
+                        }
+                    }
+
+                    is DoctorUiState.Error -> {
+                        EmptyState(
+                            icon = "❌",
+                            title = "Error",
+                            message = state.message,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
+
+                    else -> {}
                 }
             }
         }
     }
 
-    // Dialog de filtros (especialidades con checkboxes)
+    // Dialog de filtros por especialidad
     if (showFilterDialog) {
         AlertDialog(
             onDismissRequest = { showFilterDialog = false },
@@ -195,11 +315,7 @@ fun DoctorListScreen(
                             Checkbox(
                                 checked = selectedSpecialties.contains(specialty.name),
                                 onCheckedChange = { checked ->
-                                    selectedSpecialties = if (checked) {
-                                        selectedSpecialties + specialty.name
-                                    } else {
-                                        selectedSpecialties - specialty.name
-                                    }
+                                    viewModel.toggleSpecialty(specialty.name)
                                 }
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -221,11 +337,128 @@ fun DoctorListScreen(
             dismissButton = {
                 TextButton(
                     onClick = {
-                        selectedSpecialties = setOf()
+                        viewModel.clearFilters()
                         showFilterDialog = false
                     }
                 ) {
-                    Text("Limpiar todo")
+                    Text("Limpiar")
+                }
+            }
+        )
+    }
+
+    // Dialog de filtros avanzados
+    if (showAdvancedFilters) {
+        AlertDialog(
+            onDismissRequest = { showAdvancedFilters = false },
+            icon = {
+                Icon(Icons.Default.Tune, contentDescription = null)
+            },
+            title = {
+                Text("Filtros Avanzados")
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Filtro por ciudad
+                    Text(
+                        "Ciudad:",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = filterCity == null,
+                                onClick = { filterCity = null }
+                            )
+                            Text("Todas las ciudades", fontSize = 14.sp)
+                        }
+
+                        cities.forEach { city ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = filterCity == city,
+                                    onClick = { filterCity = city }
+                                )
+                                Text(city, fontSize = 14.sp)
+                            }
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    // Filtro por teleconsulta
+                    Text(
+                        "Tipo de consulta:",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = filterTelemedicine == null,
+                                onClick = { filterTelemedicine = null }
+                            )
+                            Text("Todos", fontSize = 14.sp)
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = filterTelemedicine == true,
+                                onClick = { filterTelemedicine = true }
+                            )
+                            Text("Solo teleconsulta", fontSize = 14.sp)
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = filterTelemedicine == false,
+                                onClick = { filterTelemedicine = false }
+                            )
+                            Text("Solo presencial", fontSize = 14.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showAdvancedFilters = false
+                        viewModel.searchDoctors()
+                    }
+                ) {
+                    Text("Aplicar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        filterCity = null
+                        filterTelemedicine = null
+                        showAdvancedFilters = false
+                    }
+                ) {
+                    Text("Limpiar")
                 }
             }
         )
