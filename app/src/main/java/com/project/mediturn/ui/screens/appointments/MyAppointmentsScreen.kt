@@ -44,7 +44,7 @@ fun MyAppointmentsScreen(
         it.dateTime.toLocalDate()
     }
 
-    // Citas del día seleccionado
+    // Citas del dÃ­a seleccionado
     val selectedDateAppointments = selectedDate?.let { date ->
         appointmentsByDate[date] ?: emptyList()
     } ?: emptyList()
@@ -138,7 +138,7 @@ private fun CalendarView(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Navegación de mes
+        // NavegaciÃ³n de mes
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -161,7 +161,7 @@ private fun CalendarView(
             }
         }
 
-        // Días de la semana
+        // DÃ­as de la semana
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -192,7 +192,7 @@ private fun CalendarView(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-        // Citas del día seleccionado
+        // Citas del dÃ­a seleccionado
         if (selectedDate != null) {
             Text(
                 text = "Citas del ${selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}:",
@@ -211,9 +211,9 @@ private fun CalendarView(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("📅", fontSize = 48.sp)
+                        Text("ðŸ“…", fontSize = 48.sp)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("No hay citas para este día")
+                        Text("No hay citas para este dÃ­a")
                     }
                 }
             } else {
@@ -238,10 +238,10 @@ private fun CalendarView(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("👆", fontSize = 48.sp)
+                    Text("ðŸ‘†", fontSize = 48.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Selecciona un día del calendario",
+                        "Selecciona un dÃ­a del calendario",
                         textAlign = TextAlign.Center
                     )
                 }
@@ -268,12 +268,12 @@ private fun CalendarGrid(
     ) {
         var currentDate = firstDayOfMonth.minusDays(firstDayOfWeek.toLong())
 
-        repeat(6) { // Máximo 6 semanas
+        repeat(6) { // MÃ¡ximo 6 semanas
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                repeat(7) { // 7 días
+                repeat(7) { // 7 dÃ­as
                     val date = currentDate
                     val isCurrentMonth = date.month == currentMonth.month
                     val appointmentCount = appointmentsByDate[date]?.size ?: 0
@@ -418,10 +418,10 @@ private fun HistoryView(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Próximas citas
+        // PrÃ³ximas citas
         item {
             Text(
-                text = "Próximas Citas (${upcomingAppointments.size})",
+                text = "PrÃ³ximas Citas (${upcomingAppointments.size})",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -430,7 +430,7 @@ private fun HistoryView(
         if (upcomingAppointments.isEmpty()) {
             item {
                 Text(
-                    "No tienes citas próximas",
+                    "No tienes citas prÃ³ximas",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

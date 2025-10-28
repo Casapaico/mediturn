@@ -62,10 +62,8 @@ fun NavGraph(
                     navController.navigate(Screen.Profile.route)
                 },
                 onNavigateToBookAppointment = {
-                    // Agendar Cita sin médico preseleccionado
-                    // Como BookAppointmentScreen requiere doctorId (no opcional),
-                    // enviamos 1 como placeholder (puedes cambiarlo a 0 si modificas BookAppointmentScreen)
-                    navController.navigate(Screen.BookAppointment.createRoute(1))
+                    // ✅ CORREGIDO: Agendar Cita sin médico preseleccionado (doctorId = 0)
+                    navController.navigate(Screen.BookAppointment.createRoute(0))
                 }
             )
         }
@@ -107,7 +105,7 @@ fun NavGraph(
                 navArgument("doctorId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
-            val doctorId = backStackEntry.arguments?.getInt("doctorId") ?: 1
+            val doctorId = backStackEntry.arguments?.getInt("doctorId") ?: 0
             BookAppointmentScreen(
                 doctorId = doctorId,
                 onNavigateBack = {

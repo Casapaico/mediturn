@@ -30,7 +30,7 @@ fun DoctorListScreen(
 
     val specialties = DataSource.specialties
 
-    // Filtrar médicos según búsqueda y especialidades seleccionadas
+    // Filtrar mÃ©dicos segÃºn bÃºsqueda y especialidades seleccionadas
     val filteredDoctors = remember(searchQuery, selectedSpecialties) {
         DataSource.searchDoctors(
             query = searchQuery,
@@ -45,7 +45,7 @@ fun DoctorListScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Búsqueda de Médicos",
+                        "BÃºsqueda de MÃ©dicos",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -70,7 +70,7 @@ fun DoctorListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Barra de búsqueda con boton de filtro
+            // Barra de bÃºsqueda con boton de filtro
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -86,7 +86,7 @@ fun DoctorListScreen(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Botón de filtro (dropdown)
+                // BotÃ³n de filtro (dropdown)
                 BadgedBox(
                     badge = {
                         if (selectedSpecialties.isNotEmpty()) {
@@ -149,9 +149,9 @@ fun DoctorListScreen(
             // Resultados
             if (filteredDoctors.isEmpty()) {
                 EmptyState(
-                    icon = "🔍",
-                    title = "No se encontraron médicos",
-                    message = "Intenta con otros términos de búsqueda o filtros",
+                    icon = "ðŸ”",
+                    title = "No se encontraron mÃ©dicos",
+                    message = "Intenta con otros tÃ©rminos de bÃºsqueda o filtros",
                     modifier = Modifier.fillMaxSize()
                 )
             } else {

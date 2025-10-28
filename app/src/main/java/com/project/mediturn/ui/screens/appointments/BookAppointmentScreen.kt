@@ -23,7 +23,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookAppointmentScreen(
-    doctorId: Int = 0, // 0 = sin médico preseleccionado
+    doctorId: Int = 0, // 0 = sin mÃ©dico preseleccionado
     onNavigateBack: () -> Unit = {},
     onAppointmentBooked: () -> Unit = {}
 ) {
@@ -53,7 +53,7 @@ fun BookAppointmentScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
-    // Validación
+    // ValidaciÃ³n
     val isFormValid = selectedDoctor != null &&
             selectedDate != null &&
             selectedTime != null &&
@@ -92,7 +92,7 @@ fun BookAppointmentScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Título de sección
+            // TÃ­tulo de secciÃ³n
             Text(
                 text = "Complete los datos de la cita",
                 fontSize = 18.sp,
@@ -134,7 +134,7 @@ fun BookAppointmentScreen(
                 }
             }
 
-            // 2. Médico (Dropdown filtrado por especialidad)
+            // 2. MÃ©dico (Dropdown filtrado por especialidad)
             val filteredDoctors = if (selectedSpecialty.isNotEmpty()) {
                 doctors.filter { it.specialty == selectedSpecialty }
             } else {
@@ -145,8 +145,8 @@ fun BookAppointmentScreen(
                 value = selectedDoctor?.name ?: "",
                 onValueChange = { },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Médico *") },
-                placeholder = { Text("Seleccione un médico") },
+                label = { Text("MÃ©dico *") },
+                placeholder = { Text("Seleccione un mÃ©dico") },
                 readOnly = true,
                 enabled = selectedSpecialty.isNotEmpty(),
                 trailingIcon = {
@@ -158,7 +158,7 @@ fun BookAppointmentScreen(
                     }
                 },
                 leadingIcon = {
-                    Icon(Icons.Default.Person, "Médico")
+                    Icon(Icons.Default.Person, "MÃ©dico")
                 },
                 supportingText = {
                     if (selectedSpecialty.isEmpty()) {
@@ -211,7 +211,7 @@ fun BookAppointmentScreen(
                 }
             )
 
-            // Selector de fecha simplificado (próximos 7 días)
+            // Selector de fecha simplificado (prÃ³ximos 7 dÃ­as)
             if (showDatePicker) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),

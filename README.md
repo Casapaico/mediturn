@@ -20,6 +20,9 @@ MediTurn es una aplicación móvil desarrollada en Android con Kotlin y Jetpack 
 - ✅ Calendario personal del paciente
 - ✅ Sistema de recordatorios
 - ✅ Soporte para teleconsultas
+- ✅ **Arquitectura MVVM con ViewModels** (Nuevo Día 4)
+- ✅ **Validaciones en tiempo real** (Nuevo Día 4)
+- ✅ **Repositorios con simulación de red** (Nuevo Día 4)
 
 ## 📋 Historias de Usuario
 
@@ -52,7 +55,9 @@ MediTurn es una aplicación móvil desarrollada en Android con Kotlin y Jetpack 
 - **Lenguaje:** Kotlin
 - **Framework UI:** Jetpack Compose
 - **Navegación:** Navigation Compose
-- **Arquitectura:** MVVM (en desarrollo)
+- **Arquitectura:** MVVM ✨
+- **Gestión de Estado:** StateFlow & SharedFlow ✨
+- **Concurrencia:** Kotlin Coroutines ✨
 - **IDE:** Android Studio
 - **Control de versiones:** Git/GitHub
 - **Diseño:** Figma
@@ -60,6 +65,7 @@ MediTurn es una aplicación móvil desarrollada en Android con Kotlin y Jetpack 
 - **API Level:** 26+ (Android 8.0 Oreo+)
 
 ## 📂 Estructura del Proyecto
+
 ```
 app/src/main/java/com/project/mediturn/
 ├── MainActivity.kt                    # Punto de entrada
@@ -70,6 +76,11 @@ app/src/main/java/com/project/mediturn/
 │   │   ├── Patient.kt                 # Modelo de paciente
 │   │   ├── TimeSlot.kt                # Modelo de horario
 │   │   └── Specialty.kt               # Modelo de especialidad
+│   ├── repository/                    # ✨ Repositorios (Nuevo Día 4)
+│   │   ├── DoctorRepository.kt        # Lógica de médicos
+│   │   └── AppointmentRepository.kt   # Lógica de citas
+│   ├── remote/                        # Para futuro API
+│   │   └── ApiService.kt              # (Preparado)
 │   └── DataSource.kt                  # Datos simulados
 ├── navigation/
 │   ├── NavGraph.kt                    # Configuración de rutas
@@ -101,34 +112,185 @@ app/src/main/java/com/project/mediturn/
 │       ├── Color.kt
 │       ├── Theme.kt
 │       └── Type.kt
-└── viewmodel/                         # (Próximo: lógica de negocio)
+├── util/                              # ✨ Utilidades (Nuevo Día 4)
+│   ├── Constants.kt                   # Constantes de la app
+│   ├── DateUtils.kt                   # Utilidades de fecha
+│   └── ValidationUtils.kt             # Validaciones
+└── viewmodel/                         # ✨ ViewModels (Nuevo Día 4)
+    ├── DoctorViewModel.kt             # Lógica de médicos
+    ├── AppointmentViewModel.kt        # Lógica de citas
+    └── AuthViewModel.kt               # Lógica de autenticación
 ```
 
 ## 🚀 Estado del Proyecto
 
-**Versión actual:** v1.0.0-day3 (Día 3 - UI/UX Completo)
+**Versión actual:** v1.0.0-day4 (Día 4 - Lógica y ViewModels) ✨
 
 ### Cronograma
 - ✅ **Día 1:** Planificación y Diseño (Figma)
 - ✅ **Día 2:** Configuración del Proyecto y Estructura Base
-- ✅ **Día 3:** Desarrollo de Interfaz (UI/UX) ← **COMPLETADO ✨**
-- ⏳ **Día 4:** Lógica y Datos Simulados
+- ✅ **Día 3:** Desarrollo de Interfaz (UI/UX)
+- ✅ **Día 4:** Lógica y Datos Simulados ← **COMPLETADO ✨**
 - ⏳ **Día 5:** Funcionalidades Clave y Pulido
 - ⏳ **Día 6:** Presentación Final y Documentación
 
-### Progreso Día 3 ✨
-- ✅ **6 componentes reutilizables** creados y funcionales
-- ✅ **DataSource completo** con 6 médicos, 8 especialidades, 3 citas
-- ✅ **HomeScreen** con saludo personalizado y 4 botones de acción
-- ✅ **DoctorListScreen** con búsqueda en tiempo real y filtros por especialidad
-- ✅ **DoctorDetailScreen** con perfil completo, rating y servicios
-- ✅ **BookAppointmentScreen** con selector de fecha/hora y validación
-- ✅ **MyAppointmentsScreen** con tabs (Próximas/Pasadas) y estados
-- ✅ **Material Design 3** aplicado consistentemente
-- ✅ **Navegación completa** entre todas las pantallas (11 rutas)
-- ✅ **Estados vacíos** implementados en todas las listas
-- ✅ **Imágenes con Coil** funcionando correctamente
-- ✅ **Validación de formularios** en BookAppointmentScreen
+### Progreso Día 4 ✨
+
+#### 🏗️ Arquitectura MVVM Completa
+- ✅ **3 ViewModels** creados con StateFlow
+- ✅ **2 Repositorios** con simulación de latencia de red
+- ✅ **3 Utils** con funciones reutilizables
+- ✅ **Manejo de estados** (Loading, Success, Error)
+- ✅ **Result<T>** para manejo robusto de errores
+- ✅ **Kotlin Coroutines** para operaciones asíncronas
+
+#### 📦 Repositorios (2 archivos, ~350 líneas)
+
+**DoctorRepository.kt** (130 líneas)
+- ✅ `getAllDoctors()` - Obtener todos los médicos
+- ✅ `searchDoctors()` - Búsqueda con filtros
+- ✅ `getDoctorById()` - Detalle de médico
+- ✅ `getDoctorsBySpecialty()` - Filtrar por especialidad
+- ✅ `searchDoctorsFlow()` - Búsqueda reactiva en tiempo real
+- ✅ `checkDoctorAvailability()` - Verificar disponibilidad
+- ✅ Simulación de latencia de red (300-800ms)
+
+**AppointmentRepository.kt** (220 líneas)
+- ✅ `createAppointment()` - Crear nueva cita
+- ✅ `getPatientAppointments()` - Todas las citas del paciente
+- ✅ `getUpcomingAppointments()` - Próximas citas
+- ✅ `getPastAppointments()` - Historial de citas
+- ✅ `getAppointmentById()` - Detalle de cita
+- ✅ `rescheduleAppointment()` - Reprogramar cita
+- ✅ `cancelAppointment()` - Cancelar cita
+- ✅ `confirmAppointment()` - Confirmar cita
+- ✅ `completeAppointment()` - Completar cita
+- ✅ `canReschedule()` - Validar si puede reprogramar
+- ✅ `canCancel()` - Validar si puede cancelar
+- ✅ Validación de disponibilidad de slots
+- ✅ Actualización en tiempo real de DataSource
+
+#### 🎯 ViewModels (3 archivos, ~615 líneas)
+
+**DoctorViewModel.kt** (135 líneas)
+- ✅ Estados: Loading, Success, DoctorDetail, Error
+- ✅ `loadAllDoctors()` - Cargar lista completa
+- ✅ `searchDoctors()` - Búsqueda con filtros
+- ✅ `updateSearchQuery()` - Actualizar búsqueda en tiempo real
+- ✅ `toggleSpecialty()` - Filtrar por especialidad
+- ✅ `clearFilters()` - Limpiar todos los filtros
+- ✅ `loadDoctorById()` - Cargar detalle de médico
+- ✅ Debounce automático (300ms) en búsqueda
+- ✅ StateFlow para estados reactivos
+
+**AppointmentViewModel.kt** (280 líneas)
+- ✅ Estados: Loading, Processing, AppointmentsList, AppointmentDetail, Success, Error
+- ✅ `loadAppointments()` - Cargar citas del paciente
+- ✅ `loadAppointmentById()` - Cargar detalle de cita
+- ✅ `updateSelectedDoctor()` - Actualizar médico seleccionado
+- ✅ `updateSelectedDateTime()` - Actualizar fecha/hora
+- ✅ `updateReason()` - Actualizar motivo de consulta
+- ✅ `toggleTelemedicine()` - Toggle tipo de consulta
+- ✅ `clearForm()` - Limpiar formulario de cita
+- ✅ `isFormValid()` - Validar formulario completo
+- ✅ `createAppointment()` - Crear cita nueva
+- ✅ `rescheduleAppointment()` - Reprogramar cita existente
+- ✅ `cancelAppointment()` - Cancelar cita con validación
+- ✅ `confirmAppointment()` - Confirmar cita pendiente
+- ✅ `canCancel()` - Validar si puede cancelar
+- ✅ `canReschedule()` - Validar si puede reprogramar
+- ✅ StateFlow + SharedFlow para mensajes
+
+**AuthViewModel.kt** (200 líneas)
+- ✅ Estados: Idle, Loading, Success, Error
+- ✅ `updateEmail()` - Actualizar email
+- ✅ `updatePassword()` - Actualizar contraseña
+- ✅ `updateName()` - Actualizar nombre completo
+- ✅ `updatePhone()` - Actualizar teléfono
+- ✅ `updateDNI()` - Actualizar DNI
+- ✅ `login()` - Login con validación completa
+- ✅ `quickLogin()` - Login rápido (temporal)
+- ✅ `register()` - Registro con validación
+- ✅ `logout()` - Cerrar sesión
+- ✅ `clearLoginForm()` - Limpiar formulario de login
+- ✅ `clearRegisterForm()` - Limpiar formulario de registro
+- ✅ `isLoginFormValid()` - Validar formulario de login
+- ✅ `isRegisterFormValid()` - Validar formulario de registro
+- ✅ Preparado para integración con API real
+
+#### 🛠️ Utils (3 archivos, ~480 líneas)
+
+**Constants.kt** (95 líneas)
+- ✅ Información de la app (nombre, versión)
+- ✅ Formatos de fecha y hora
+- ✅ Restricciones de citas (mínimo 2h anticipación)
+- ✅ Horarios de trabajo (9-12h, 15-18h)
+- ✅ Duración de slots (30 minutos)
+- ✅ Configuración de búsqueda (debounce 300ms)
+- ✅ URLs para futuro API
+- ✅ Mensajes de validación estandarizados
+- ✅ Mensajes de éxito y confirmación
+- ✅ Icons de especialidades (emojis)
+- ✅ Valores por defecto
+- ✅ Keys de SharedPreferences
+
+**DateUtils.kt** (190 líneas)
+- ✅ **18+ funciones de utilidad** para manejo de fechas
+- ✅ `formatFullDate()` - "25 Oct 2024"
+- ✅ `formatShortDate()` - "25/10/2024"
+- ✅ `formatTime()` - "10:30"
+- ✅ `formatDateTime()` - "25/10/2024 10:30"
+- ✅ `formatDayOfWeek()` - "Lunes"
+- ✅ `formatShortDayOfWeek()` - "Lun"
+- ✅ `formatRelativeDate()` - "Hoy", "Mañana", "En 2 días"
+- ✅ `isPastDate()` - Verificar si la fecha es pasada
+- ✅ `isPastDateTime()` - Verificar si datetime es pasado
+- ✅ `isWithinBookingRange()` - Verificar rango válido de reserva
+- ✅ `hasMinimumAdvance()` - Verificar anticipación mínima
+- ✅ `isWorkingHour()` - Verificar horario laboral
+- ✅ `generateNextDays()` - Generar próximos N días
+- ✅ `generateTimeSlots()` - Generar slots de horario
+- ✅ `getTimeUntilAppointment()` - Tiempo relativo hasta cita
+- ✅ `isSameDay()` - Comparar si son el mismo día
+- ✅ `getStartOfDay()` - Obtener inicio del día
+- ✅ `getEndOfDay()` - Obtener fin del día
+- ✅ Locale español configurado
+- ✅ Formato relativo de fechas
+
+**ValidationUtils.kt** (195 líneas)
+- ✅ **15+ funciones de validación**
+- ✅ `isValidEmail()` - Validar formato de email
+- ✅ `validateEmail()` - Validar email completo con mensaje
+- ✅ `isValidPhone()` - Validar formato de teléfono
+- ✅ `validatePhone()` - Validar teléfono completo
+- ✅ `isValidDNI()` - Validar DNI peruano (8 dígitos)
+- ✅ `validateDNI()` - Validar DNI completo
+- ✅ `validateReason()` - Validar motivo de consulta (10-200 chars)
+- ✅ `validateDate()` - Validar fecha seleccionada
+- ✅ `validateDateTime()` - Validar fecha y hora completa
+- ✅ `validateAppointmentForm()` - Validar formulario completo
+- ✅ `validateNotEmpty()` - Campo no vacío
+- ✅ `validateMinLength()` - Longitud mínima
+- ✅ `validateMaxLength()` - Longitud máxima
+- ✅ `validatePassword()` - Validar contraseña segura
+- ✅ `validatePasswordMatch()` - Validar coincidencia de contraseñas
+- ✅ Data classes: `ValidationResult`, `FormValidationResult`
+- ✅ Regex patterns para email, teléfono, DNI
+- ✅ Mensajes descriptivos de error
+
+#### 📊 Estadísticas del Día 4
+
+| Métrica | Cantidad |
+|---------|----------|
+| **Archivos creados** | 8 |
+| **Líneas de código** | ~1,445 |
+| **Funciones totales** | 57+ |
+| **ViewModels** | 3 |
+| **Repositorios** | 2 |
+| **Utils** | 3 |
+| **Estados UI definidos** | 8 |
+| **Validaciones** | 15+ |
+| **Funciones de fecha** | 18+ |
 
 ## 📝 Instalación y Uso
 
@@ -192,6 +354,7 @@ val TextSecondary = Color(0xFF757575)    // Texto Secundario
 ```
 
 ## 🔄 Flujo de Navegación
+
 ```
 Login ────────────────────────┐
   │                            │
@@ -207,212 +370,210 @@ Home ──┬─→ Búsqueda ──→ Detalle ──→ Agendar ──┐
   └────────────────────────────────────────────┘
 ```
 
-## ✨ Características Implementadas
+## 🏗️ Arquitectura MVVM (Nuevo Día 4)
 
-### 🏠 HomeScreen
-- **Saludo personalizado** con nombre del paciente extraído de DataSource
-- **4 botones principales** en grid 2x2:
-  - 👤 Mi Perfil (Tertiario)
-  - 🔍 Búsqueda (Primario)
-  - ➕ Agendar Cita (Secundario)
-  - 📅 Mis Citas (Error - destaca)
-- **Card informativa** con icono de ayuda
-- **Diseño centrado** y espaciado Material Design 3
+```
+┌─────────────────────────────────────────────────┐
+│                    VIEW (UI)                    │
+│           Jetpack Compose Screens               │
+│  HomeScreen | DoctorListScreen | BookScreen    │
+└──────────────────┬──────────────────────────────┘
+                   │ observa StateFlow
+                   ↓
+┌─────────────────────────────────────────────────┐
+│                  VIEWMODEL                      │
+│     DoctorViewModel | AppointmentViewModel     │
+│   - StateFlow (estados UI)                     │
+│   - SharedFlow (eventos únicos)                │
+│   - Lógica de presentación                     │
+│   - Validaciones                                │
+└──────────────────┬──────────────────────────────┘
+                   │ llama funciones suspend
+                   ↓
+┌─────────────────────────────────────────────────┐
+│                 REPOSITORY                      │
+│  DoctorRepository | AppointmentRepository      │
+│   - Result<T> para manejo de errores          │
+│   - Simulación de latencia de red              │
+│   - Lógica de negocio                          │
+└──────────────────┬──────────────────────────────┘
+                   │ accede a datos
+                   ↓
+┌─────────────────────────────────────────────────┐
+│                 DATA SOURCE                     │
+│              DataSource (simulado)              │
+│   - Médicos, Citas, Especialidades             │
+│   - Funciones de búsqueda y filtrado           │
+└─────────────────────────────────────────────────┘
+```
 
-### 🔍 DoctorListScreen
-- **Barra de búsqueda** en tiempo real con icono de lupa
-- **Botón de filtros** con badge mostrando cantidad de filtros activos
-- **Dialog de filtros** con checkboxes por especialidad (8 opciones)
-- **Card de filtros activos** con botón "Limpiar"
-- **LazyColumn** con 6 médicos:
-  - Foto circular (80dp) cargada con Coil
-  - Nombre, especialidad, experiencia
-  - Rating con estrellas y conteo de reviews
-  - Badge "Video" si tiene teleconsulta
-  - Precio destacado en color primario
-- **Estado vacío** con emoji 🔍 cuando no hay resultados
-- **HorizontalDivider** separando búsqueda de resultados
+## ✨ Características Implementadas (Día 4)
 
-### 👨‍⚕️ DoctorDetailScreen
-- **Header grande** con foto del médico (120dp)
-- **Información profesional:**
-  - Nombre y especialidad
-  - Rating con estrellas (⭐ 4.8)
-  - Años de experiencia
-  - Colegiatura (CMP)
-  - Ciudad
-- **Descripción completa** del médico en Card
-- **Services Cards:**
-  - 🏥 Consulta Presencial
-  - 📹 Teleconsulta (si disponible)
-- **Precio destacado** en Card separada
-- **Badge de disponibilidad** (7 días)
-- **Bottom bar** con botón "Agendar Cita"
+### 🎯 Gestión de Médicos
+- ✅ Búsqueda en tiempo real con debounce (300ms)
+- ✅ Filtros por especialidad (múltiples)
+- ✅ Carga de detalle de médico
+- ✅ Verificación de disponibilidad de horarios
+- ✅ Estados de carga (Loading, Success, Error)
 
-### 📅 BookAppointmentScreen
-- **Card del médico** con foto mini y datos básicos
-- **Selector de fecha** visual (7 días):
-  - Día de la semana
-  - Número del día
-  - Mes abreviado
-  - Selección con color primario
-- **Grid de horarios** 3x3:
-  - Mañana (9:00-12:00)
-  - Tarde (15:00-18:00)
-  - Estados: disponible/ocupado/seleccionado
-- **Campo de motivo** de consulta (TextField multilinea)
-- **Toggle de tipo:** Presencial/Virtual
-- **Card de resumen** con toda la info de la cita
-- **Validación completa:**
-  - Fecha requerida
-  - Hora requerida
-  - Motivo mínimo 10 caracteres
-  - Botón "Confirmar" solo habilitado si todo está completo
-- **ScrollState** para pantallas pequeñas
+### 📅 Gestión de Citas
+- ✅ Crear cita con validación completa
+- ✅ Listar citas (próximas y pasadas)
+- ✅ Ver detalle de cita
+- ✅ Reprogramar cita (con validaciones)
+- ✅ Cancelar cita (con validaciones)
+- ✅ Confirmar cita pendiente
+- ✅ Completar cita realizada
+- ✅ Validación de disponibilidad en tiempo real
+- ✅ Actualización automática de DataSource
 
-### 📋 MyAppointmentsScreen
-- **TabRow** con 2 tabs:
-  - 🔜 Próximas (2 citas)
-  - ✅ Pasadas (1 cita)
-- **Citas filtradas** por fecha actual
-- **AppointmentCard** con:
-  - Foto del médico (60dp)
-  - Nombre y especialidad
-  - Fecha formateada ("25 Oct, 2024")
-  - Hora formateada ("10:00 AM")
-  - Motivo de consulta
-  - Tipo: Presencial/Teleconsulta con icono
-  - Badge de estado con colores:
-    - 🟡 Pendiente (Warning)
-    - 🟢 Confirmada (Success)
-    - ⚪ Completada (Surface)
-    - 🔴 Cancelada (Error)
-- **Estado vacío** personalizado por tab:
-  - "No tienes citas próximas" (Próximas)
-  - "No tienes historial" (Pasadas)
+### ✔️ Validaciones Implementadas
 
-### 👤 ProfileScreen
-- **En desarrollo** (placeholder)
-- Navegación funcional desde Home
+#### Formulario de Agendar Cita
+```
+✓ Médico seleccionado (requerido)
+✓ Especialidad seleccionada (requerida)
+✓ Fecha seleccionada (requerida)
+✓ Fecha no pasada
+✓ Fecha dentro de 7 días
+✓ Hora seleccionada (requerida)
+✓ Anticipación mínima 2 horas
+✓ Hora en horario laboral (9-12, 15-18)
+✓ Slot disponible (no ocupado)
+✓ Motivo (10-200 caracteres)
+```
 
-## 📦 Dependencias Principales
+#### Formulario de Login
+```
+✓ Email formato válido (regex)
+✓ Email no vacío
+✓ Contraseña no vacía
+```
+
+#### Formulario de Registro
+```
+✓ Nombre no vacío
+✓ Email formato válido
+✓ Teléfono formato válido (9-15 dígitos)
+✓ DNI válido (8 dígitos)
+✓ Contraseña segura (8+ caracteres, mayúsculas, minúsculas, números)
+✓ Contraseñas coinciden
+```
+
+### 🔄 Estados de UI Implementados
+
+#### DoctorViewModel
 ```kotlin
-android {
-    compileSdk = 36
-    defaultConfig {
-        minSdk = 26  // Android 8.0+ para java.time
-        targetSdk = 36
-    }
-}
-
-dependencies {
-    // Compose BOM
-    implementation(platform("androidx.compose:compose-bom:2024.10.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-
-    // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.4")
-
-    // Lifecycle & ViewModel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-
-    // Coil para imágenes
-    implementation("io.coil-kt:coil-compose:2.5.0")
-
-    // Retrofit (preparado para futuro)
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+sealed class DoctorUiState {
+    object Loading
+    data class Success(doctors, specialties)
+    data class DoctorDetail(doctor)
+    data class Error(message)
 }
 ```
 
-## 🎯 Componentes Reutilizables
+#### AppointmentViewModel
+```kotlin
+sealed class AppointmentUiState {
+    object Loading
+    object Processing
+    data class AppointmentsList(upcoming, past)
+    data class AppointmentDetail(appointment)
+    data class Success(appointment)
+    data class Error(message)
+}
 
-| Componente | Descripción | Props Principales |
-|------------|-------------|-------------------|
-| **SearchBar** | Barra de búsqueda con clear | `query`, `onQueryChange`, `placeholder` |
-| **DoctorCard** | Card completa de médico | `doctor: Doctor`, `onClick` |
-| **EmptyState** | Estado vacío personalizado | `icon`, `title`, `message` |
-| **AppointmentCard** | Card de cita | `appointment: Appointment`, `onClick` |
-| **SpecialtyChip** | Chip de especialidad | `specialty: String`, `isSelected`, `onClick` |
-| **TimeSlotButton** | Botón de horario | `time: String`, `isAvailable`, `isSelected` |
-
-## 👨‍💻 Convención de Commits
-
-Seguimos **Conventional Commits** para mantener un historial limpio:
-
-```
-feat: nueva funcionalidad
-fix: corrección de bug
-docs: cambios en documentación
-style: formato, estilos (sin cambios de código)
-refactor: refactorización sin cambiar funcionalidad
-test: añadir o modificar tests
-chore: tareas de mantenimiento
+sealed class ActionMessage {
+    data class Success(message)
+    data class Error(message)
+}
 ```
 
-### Ejemplos del Proyecto:
+#### AuthViewModel
+```kotlin
+sealed class AuthUiState {
+    object Idle
+    object Loading
+    object Success
+    data class Error(message)
+}
 
-**Día 1-2 (Estructura):**
-SOTO:
-```bash
-git commit -m "feat: configuración inicial del proyecto Mediturn"
-git commit -m "feat: implementar modelos de datos principales: Doctor.kt con especialidad y horarios, Appointment.kt con estados de cita, Patient.kt con datos del paciente, TimeSlot.kt para gestión de horarios, Specialty.kt para especialidades médicas"
-git commit -m "feat: implementar sistema de navegación con rutas, estructura y parámetros"
-git commit -m "feat: crear estructura base de pantallas con rutas, parámetros y composables"
-git commit -m "feat: crear paleta de colores médicos con primarios, estados y esquema neutro"
+sealed class AuthMessage {
+    data class Success(message)
+    data class Error(message)
+}
 ```
 
-CASAPAICO:
-```bash
-git commit -m "screens"
-git commit -m "corrección Theme"
+## 🧪 Testing Manual (Día 4)
+
+### ✅ Flujo CRUD de Citas Funcional
+```
+1. Login → Home ✅
+2. Click "AGENDAR CITA" → Formulario vacío ✅
+3. Seleccionar especialidad → Dropdown funciona ✅
+4. Seleccionar médico → Filtrado por especialidad ✅
+5. Seleccionar fecha → Calendario con 7 días ✅
+6. Seleccionar hora → Grid de horarios ✅
+7. Escribir motivo (15 chars) → Validación pasa ✅
+8. Click "Agendar" → Simula delay de 1s ✅
+9. Navega a "Mis Citas" → Nueva cita visible ✅
+10. Click en cita → Ver detalle ✅
+11. Click "Reprogramar" → Permite cambiar fecha/hora ✅
+12. Click "Cancelar" → Cambia estado a CANCELLED ✅
 ```
 
-**Día 3 (UI/UX Completo):**
-```bash
-git commit -m "feat(día3): implementación completa de UI - todas las pantallas funcionales
+### 🎯 Pruebas de Validación
+- ❌ Agendar sin médico → Botón deshabilitado ✅
+- ❌ Agendar sin fecha → Botón deshabilitado ✅
+- ❌ Agendar sin hora → Botón deshabilitado ✅
+- ❌ Agendar sin motivo → Botón deshabilitado ✅
+- ❌ Motivo < 10 caracteres → Botón deshabilitado ✅
+- ✅ Todos los campos completos → Botón habilitado ✅
+- ✅ Fecha pasada → Rechazo con mensaje ✅
+- ✅ Hora pasada → Rechazo con mensaje ✅
+- ✅ Slot ocupado → Rechazo con mensaje ✅
 
-PANTALLAS ACTUALIZADAS:
-- PantallaPrincipal: añadida cuadrícula de 4 botones de acción, saludo personalizado
-- PantallaListaDoctores: barra de búsqueda, diálogo de filtros, contador de badge
-- PantallaDetalleDoctor: perfil completo, tarjetas de servicios, barra inferior
-- PantallaReservarCita: selector de fecha/hora, validación, tarjeta de resumen
-- PantallaMisCitas: pestañas (próximas/pasadas), citas filtradas
+### 🔍 Pruebas de Búsqueda con ViewModel
+- Buscar "Dr" → 300ms delay → 3 resultados ✅
+- Buscar "María" → Filtrado reactivo → 1 resultado ✅
+- Filtrar "Cardiología" → StateFlow actualiza → 1 resultado ✅
+- Limpiar filtros → Restaura todos los médicos ✅
+- Búsqueda mientras escribe → Debounce funciona ✅
 
-COMPONENTES CREADOS:
-- BarraBusqueda.kt: búsqueda en tiempo real con botón limpiar
-- TarjetaDoctor.kt: foto, calificación, experiencia, precio, badge telemedicina
-- EstadoVacio.kt: estados vacíos personalizables para todas las listas
-- TarjetaCita.kt: información de cita con badge de estado
-- BotonHorario.kt: estados disponible/ocupado/seleccionado
-- ChipEspecialidad.kt: chips de especialidad seleccionables
+### 📅 Pruebas de Estados de Carga
+- Cargar médicos → Muestra Loading → Success ✅
+- Crear cita → Muestra Processing → Success ✅
+- Error de red simulado → Muestra Error con mensaje ✅
+- Cancelar cita → Confirma → Actualiza estado ✅
 
-DATOS:
-- FuenteDatos.kt: 6 doctores, 8 especialidades, 3 citas
-- Generación de horarios para próximos 7 días
-- Funciones de búsqueda y filtrado
+## 📊 Datos Simulados
 
-CARACTERÍSTICAS:
-- Material Design 3 aplicado consistentemente
-- Carga de imágenes con Coil
-- Validación de formularios en PantallaReservarCita
-- Navegación entre todas las 11 pantallas
-- Estados vacíos para todas las listas
-- Formato de fecha/hora con java.time
+### 👨‍⚕️ Médicos (6)
+1. **Dr. Carlos Mendoza** - Cardiología (⭐4.8, 245 reviews, S/150)
+2. **Dra. María Fernández** - Dermatología (⭐4.9, 312 reviews, S/120)
+3. **Dr. Juan Pérez** - Pediatría (⭐4.7, 189 reviews, S/100)
+4. **Dra. Ana Torres** - Neurología (⭐4.9, 278 reviews, S/180)
+5. **Dr. Roberto Sánchez** - Traumatología (⭐4.6, 156 reviews, S/200)
+6. **Dra. Patricia Rojas** - Oftalmología (⭐4.8, 203 reviews, S/140)
 
-CORRECCIONES:
-- minSdk actualizado a 26 para soporte de java.time
-- Permiso de internet añadido al manifiesto
-- Todas las importaciones corregidas
+### 🏥 Especialidades (8)
+❤️ Cardiología | 🧴 Dermatología | 👶 Pediatría | 🧠 Neurología  
+🦴 Traumatología | 👁️ Oftalmología | 🌸 Ginecología | 🧘 Psiquiatría
 
-ESTADO: Objetivos del Día 3 completados al 100% ✅"
-```
+### 📅 Citas (3 iniciales + dinámicas)
+- **Próximas:**
+  1. Dr. Carlos Mendoza - 2 días (Confirmada)
+  2. Dra. María Fernández - 5 días (Pendiente)
+- **Pasadas:**
+  1. Dra. Ana Torres - hace 10 días (Completada)
+- **Dinámicas:** Las citas creadas por el usuario se persisten en DataSource
+
+### ⏰ TimeSlots
+- **Horarios generados:** 7 días siguientes
+- **Turnos mañana:** 9:00 - 12:00 (slots cada 30 min)
+- **Turnos tarde:** 15:00 - 18:00 (slots cada 30 min)
+- **Disponibilidad:** Simulada con algoritmo (70% disponibles)
+- **Actualización:** Slots ocupados se marcan al crear cita
 
 ## 🐛 Solución de Problemas
 
@@ -429,131 +590,145 @@ android {
 }
 ```
 
-### ❌ Error: "Unresolved reference: components"
-**Causa:** Carpeta `ui/components/` no existe
+### ❌ Error: "Unresolved reference: viewmodel"
+**Causa:** Falta carpeta `viewmodel/`
 
 **Solución:**
-1. Click derecho en `ui/`
+1. Click derecho en `com.project.mediturn`
 2. New > Package
-3. Nombre: `components`
-4. Copiar los 6 archivos de componentes
+3. Nombre: `viewmodel`
+4. Copiar los 3 archivos de ViewModels
 
-### ❌ Las imágenes no cargan
-**Causa:** Falta permiso de INTERNET
-
-**Solución:**
-```xml
-<!-- En AndroidManifest.xml -->
-<manifest>
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <application>
-        ...
-    </application>
-</manifest>
-```
-
-### ❌ App crashea al presionar "BÚSQUEDA"
-**Causas posibles:**
-1. Componentes no están en `/ui/components/`
-2. Falta permiso de INTERNET
-3. Import incorrecto de DataSource
+### ❌ Error: "Unresolved reference: repository"
+**Causa:** Falta carpeta `data/repository/`
 
 **Solución:**
-1. Verificar estructura de carpetas
-2. Agregar permisos al manifest
-3. Verificar imports: `import com.project.mediturn.data.DataSource`
+1. Click derecho en `data/`
+2. New > Package
+3. Nombre: `repository`
+4. Copiar los 2 archivos de Repositorios
 
-### ❌ Build falla
+### ❌ Las validaciones no funcionan
+**Causa:** Falta Utils
+
+**Solución:**
+1. Crear carpeta `util/`
+2. Copiar `Constants.kt`, `DateUtils.kt`, `ValidationUtils.kt`
+3. Rebuild Project
+
+### ❌ Build falla después de agregar ViewModels
 **Solución:**
 ```
 1. Build > Clean Project
-2. Build > Rebuild Project
-3. File > Invalidate Caches > Invalidate and Restart
-4. Sync Project with Gradle Files
+2. File > Invalidate Caches > Invalidate and Restart
+3. Sync Project with Gradle Files
+4. Build > Rebuild Project
 ```
 
-## 📊 Datos Simulados
+## 💡 Aprendizajes del Día 4
 
-### 👨‍⚕️ Médicos (6)
-1. **Dr. Carlos Mendoza** - Cardiología (⭐4.8, 245 reviews, S/150)
-2. **Dra. María Fernández** - Dermatología (⭐4.9, 312 reviews, S/120)
-3. **Dr. Juan Pérez** - Pediatría (⭐4.7, 189 reviews, S/100)
-4. **Dra. Ana Torres** - Neurología (⭐4.9, 278 reviews, S/180)
-5. **Dr. Roberto Sánchez** - Traumatología (⭐4.6, 156 reviews, S/200)
-6. **Dra. Patricia Rojas** - Oftalmología (⭐4.8, 203 reviews, S/140)
+### 🏗️ Arquitectura MVVM
+- ✅ Separación clara de responsabilidades
+- ✅ Testabilidad mejorada
+- ✅ Reutilización de código de negocio
+- ✅ Gestión de estados limpia y predecible
 
-### 🏥 Especialidades (8)
-❤️ Cardiología | 🧴 Dermatología | 👶 Pediatría | 🧠 Neurología  
-🦴 Traumatología | 👁️ Oftalmología | 🌸 Ginecología | 🧘 Psiquiatría
+### 📊 StateFlow vs SharedFlow
+- ✅ **StateFlow:** Estados persistentes de UI (lista de médicos, citas)
+- ✅ **SharedFlow:** Eventos únicos (mensajes de éxito/error, navegación)
+- ✅ **collectAsState():** Observar StateFlow en Composables
+- ✅ **LaunchedEffect:** Reaccionar a SharedFlow
 
-### 📅 Citas (3)
-- **Próximas:**
-  1. Dr. Carlos Mendoza - 2 días (Confirmada)
-  2. Dra. María Fernández - 5 días (Pendiente)
-- **Pasadas:**
-  1. Dra. Ana Torres - hace 10 días (Completada)
+### 🎯 Result<T> Pattern
+- ✅ Manejo explícito de éxito y error
+- ✅ Sin excepciones no controladas
+- ✅ `onSuccess` / `onFailure` para branching claro
+- ✅ Propagación limpia de errores
 
-### ⏰ TimeSlots
-- **Horarios generados:** 7 días siguientes
-- **Turnos mañana:** 9:00 - 12:00 (slots cada 30 min)
-- **Turnos tarde:** 15:00 - 18:00 (slots cada 30 min)
-- **Disponibilidad:** Simulada con algoritmo (70% disponibles)
+### ⚡ Kotlin Coroutines
+- ✅ `suspend fun` para operaciones asíncronas
+- ✅ `viewModelScope` para lanzar coroutines
+- ✅ `delay()` para simulación de latencia
+- ✅ Cancelación automática al destruir ViewModel
 
-## 🧪 Testing Manual
+## 📄 Resumen de Cambios - Día 4
 
-### ✅ Flujo Completo Funcional
 ```
-1. Login → Home ✅
-2. Click "BÚSQUEDA" → Lista de 6 médicos ✅
-3. Buscar "Carlos" → Filtrado correcto ✅
-4. Click filtro → Dialog con 8 especialidades ✅
-5. Seleccionar "Cardiología" → Badge muestra "1" ✅
-6. Ver 1 resultado (Dr. Carlos) ✅
-7. Click en médico → Detalle completo ✅
-8. Click "Agendar Cita" → Formulario ✅
-9. Seleccionar fecha → Horarios filtrados ✅
-10. Seleccionar hora → Card de resumen ✅
-11. Escribir motivo → Validación en tiempo real ✅
-12. Confirmar → Navega a Mis Citas ✅
-13. Ver cita en tab "Próximas" ✅
+ARCHIVOS CREADOS (8 archivos, ~1,445 líneas):
+
+REPOSITORIOS (2 archivos):
+- DoctorRepository.kt: getAllDoctors(), searchDoctors(), getDoctorById(), 
+  getDoctorsBySpecialty(), searchDoctorsFlow(), checkDoctorAvailability()
+- AppointmentRepository.kt: createAppointment(), getPatientAppointments(),
+  getUpcomingAppointments(), getPastAppointments(), getAppointmentById(),
+  rescheduleAppointment(), cancelAppointment(), confirmAppointment(),
+  completeAppointment(), canReschedule(), canCancel()
+
+VIEWMODELS (3 archivos):
+- DoctorViewModel.kt: loadAllDoctors(), searchDoctors(), updateSearchQuery(),
+  toggleSpecialty(), clearFilters(), loadDoctorById()
+- AppointmentViewModel.kt: loadAppointments(), loadAppointmentById(),
+  updateSelectedDoctor(), updateSelectedDateTime(), updateReason(),
+  toggleTelemedicine(), clearForm(), isFormValid(), createAppointment(),
+  rescheduleAppointment(), cancelAppointment(), confirmAppointment(),
+  canCancel(), canReschedule()
+- AuthViewModel.kt: updateEmail(), updatePassword(), updateName(), updatePhone(),
+  updateDNI(), login(), quickLogin(), register(), logout(), clearLoginForm(),
+  clearRegisterForm(), isLoginFormValid(), isRegisterFormValid()
+
+UTILS (3 archivos):
+- Constants.kt: 95 líneas de constantes (app info, formatos, restricciones,
+  horarios, configuración, URLs, mensajes, icons, valores por defecto, keys)
+- DateUtils.kt: 18+ funciones de utilidad para fechas (formatters, validadores,
+  generadores, comparadores, calculadores de tiempo relativo)
+- ValidationUtils.kt: 15+ funciones de validación (email, teléfono, DNI, reason,
+  date, dateTime, appointmentForm, password, etc.)
+
+FUNCIONALIDADES IMPLEMENTADAS:
+- ✅ Arquitectura MVVM completa
+- ✅ StateFlow para estados de UI
+- ✅ SharedFlow para mensajes de acción
+- ✅ Result<T> para manejo de errores
+- ✅ Coroutines para operaciones asíncronas
+- ✅ Simulación de latencia de red (300-1000ms)
+- ✅ Validaciones en tiempo real
+- ✅ Debounce en búsqueda (300ms)
+- ✅ CRUD completo de citas
+- ✅ Gestión de disponibilidad de slots
+- ✅ Actualización reactiva de DataSource
+
+VALIDACIONES AGREGADAS:
+- ✅ Email formato válido (regex)
+- ✅ Teléfono formato válido (9-15 dígitos)
+- ✅ DNI válido (8 dígitos)
+- ✅ Motivo de consulta (10-200 caracteres)
+- ✅ Fecha no pasada
+- ✅ Fecha dentro de 7 días
+- ✅ Anticipación mínima (2 horas)
+- ✅ Horario laboral (9-12, 15-18)
+- ✅ Slot disponible
+- ✅ Contraseña segura (8+ chars, mayús, minús, números)
+
+ESTADOS UI DEFINIDOS:
+- ✅ DoctorUiState: Loading, Success, DoctorDetail, Error
+- ✅ AppointmentUiState: Loading, Processing, AppointmentsList,
+     AppointmentDetail, Success, Error
+- ✅ AuthUiState: Idle, Loading, Success, Error
+- ✅ ActionMessage: Success, Error (para eventos únicos)
+
+ESTADO: Objetivos del Día 4 completados al 100% ✅
 ```
-
-### 🎯 Pruebas de Validación
-- ❌ Confirmar sin fecha → Botón deshabilitado ✅
-- ❌ Confirmar sin hora → Botón deshabilitado ✅
-- ❌ Confirmar sin motivo → Botón deshabilitado ✅
-- ❌ Motivo < 10 caracteres → Botón deshabilitado ✅
-- ✅ Todos los campos completos → Botón habilitado ✅
-
-### 🔍 Pruebas de Búsqueda y Filtros
-- Buscar "Dr" → 3 resultados (todos los "Dr.") ✅
-- Buscar "María" → 1 resultado ✅
-- Buscar "Cardiología" → 1 resultado ✅
-- Filtrar por "Pediatría" → 1 resultado ✅
-- Filtrar múltiples especialidades → OR logic ✅
-- Limpiar filtros → Todos los médicos ✅
-- Buscar texto inexistente → Estado vacío ✅
-
-### 📅 Pruebas de Calendario
-- Ver tab "Próximas" → 2 citas ✅
-- Ver tab "Pasadas" → 1 cita ✅
-- Citas ordenadas por fecha ✅
-- Estados correctos por tipo ✅
-- Formato de fecha/hora correcto ✅
 
 ## 📸 Capturas de Pantalla
 
-*(Agregar screenshots aquí después de Day 3)*
+*(Agregar screenshots aquí después de Day 4)*
 
-1. **HomeScreen** - 4 botones en grid 2x2
-2. **DoctorListScreen** - Búsqueda y filtros
-3. **DoctorListScreen** - Dialog de filtros con checkboxes
-4. **DoctorDetailScreen** - Perfil completo del médico
-5. **BookAppointmentScreen** - Selector de fecha y hora
-6. **BookAppointmentScreen** - Card de resumen
-7. **MyAppointmentsScreen** - Tab Próximas
-8. **MyAppointmentsScreen** - Tab Pasadas
+1. **BookAppointmentScreen** - Loading state con CircularProgressIndicator
+2. **DoctorListScreen** - Con ViewModels y búsqueda reactiva
+3. **MyAppointmentsScreen** - Estados de carga y error
+4. **Snackbar** - Mensajes de éxito al crear cita
+5. **Validaciones** - Botón deshabilitado con campos incompletos
+6. **Calendario** - Slots disponibles y ocupados en tiempo real
 
 ## 📄 Licencia
 
@@ -564,33 +739,34 @@ Modalidad: Trabajo colaborativo (equipos de 2 estudiantes)
 
 ---
 
-## 🎯 Próximos Pasos (Día 4)
+## 🎯 Próximos Pasos (Día 5)
 
-### Objetivos Día 4:
-- [ ] Implementar ViewModels (MVVM)
-- [ ] Crear DoctorViewModel con StateFlow
-- [ ] Crear AppointmentViewModel
-- [ ] Agregar estados de carga (Loading, Success, Error)
-- [ ] Implementar repositorios locales
-- [ ] Funciones CRUD para citas (crear, editar, cancelar)
-- [ ] Validación de disponibilidad en tiempo real
-- [ ] Manejo de errores con SnackBar
-- [ ] Agregar confirmaciones con AlertDialog
+### Objetivos Día 5:
+- [ ] **Integrar ViewModels en todas las pantallas**
+- [ ] **Agregar SnackBars para mensajes de éxito/error**
+- [ ] **Implementar diálogos de confirmación (cancelar cita, salir)**
+- [ ] **Pull-to-refresh en listas**
+- [ ] **Swipe-to-delete en MyAppointmentsScreen**
+- [ ] **Animaciones de transición entre pantallas**
+- [ ] **Loading skeletons en lugar de CircularProgressIndicator**
+- [ ] **Testing en diferentes dispositivos y tamaños**
+- [ ] **Modo oscuro (Dark Mode) completo**
+- [ ] **Accessibility (TalkBack, tamaños de fuente)**
 
-### Funcionalidades Día 4:
-- Crear cita real que persista en DataSource
-- Reprogramar cita existente
-- Cancelar cita con confirmación
-- Validar horarios ocupados
-- Estados de carga en todas las pantallas
-- Manejo de errores
+### Funcionalidades Día 5:
+- Refinar la experiencia de usuario (UX)
+- Pulir animaciones y transiciones
+- Agregar feedback visual en todas las acciones
+- Optimizar rendimiento
+- Testing exhaustivo
+- Corrección de bugs
 
 ---
 
-**Última actualización:** 24 de octubre de 2025  
-**Versión:** v1.0.0-day3  
-**Estado:** ✅ Día 3 completado al 100%  
-**Próximo hito:** Día 4 - Lógica y ViewModels
+**Última actualización:** 27 de octubre de 2025  
+**Versión:** v1.0.0-day4  
+**Estado:** ✅ Día 4 completado al 100%  
+**Próximo hito:** Día 5 - Pulido y Testing
 
 ## 📧 Contacto
 
