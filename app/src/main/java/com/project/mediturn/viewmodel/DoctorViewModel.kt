@@ -1,6 +1,7 @@
 package com.project.mediturn.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.project.mediturn.data.DataSource
 import com.project.mediturn.data.model.Doctor
@@ -12,9 +13,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class)
-class DoctorViewModel : ViewModel() {
+class DoctorViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = DoctorRepository()
+    private val repository = DoctorRepository(application.applicationContext)
 
     // ========== STATE ==========
 

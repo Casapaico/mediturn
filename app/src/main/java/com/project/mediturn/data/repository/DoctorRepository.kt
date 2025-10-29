@@ -1,21 +1,32 @@
 package com.project.mediturn.data.repository
 
-import com.project.mediturn.data.DataSource
+import android.content.Context
+import com.project.mediturn.data.local.MediTurnDatabase
+import com.project.mediturn.data.local.mapper.toModel
 import com.project.mediturn.data.model.Doctor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class DoctorRepository {
+class DoctorRepository(context: Context) {
+
+    private val database = MediTurnDatabase.getDatabase(context)
+    private val doctorDao = database.doctorDao()
+    private val timeSlotDao = database.timeSlotDao()
 
     /**
      * Obtener todos los médicos
-     * Simula delay de red
      */
     suspend fun getAllDoctors(): Result<List<Doctor>> {
         return try {
-            delay(800) // Simular latencia de red
-            Result.success(DataSource.doctors)
+            delay(500) // Simular latencia
+            val entities = doctorDao.getAllDoctors()
+            val doctors = entities.map { entity ->
+                val slots = timeSlotDao.getTimeSlotsByDoctor(entity.id)
+                    .map { it.toModel() }
+                entity.toModel(slots)
+            }
+            Result.success(doctors)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -31,14 +42,19 @@ class DoctorRepository {
         telemedicine: Boolean? = null
     ): Result<List<Doctor>> {
         return try {
-            delay(500)
-            val results = DataSource.searchDoctors(
+            delay(300)
+            val entities = doctorDao.searchDoctorsWithFilters(
                 query = query,
                 specialty = specialty,
                 city = city,
                 telemedicine = telemedicine
             )
-            Result.success(results)
+            val doctors = entities.map { entity ->
+                val slots = timeSlotDao.getAvailableTimeSlots(entity.id)
+                    .map { it.toModel() }
+                entity.toModel(slots)
+            }
+            Result.success(doctors)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -49,10 +65,12 @@ class DoctorRepository {
      */
     suspend fun getDoctorById(id: Int): Result<Doctor> {
         return try {
-            delay(300)
-            val doctor = DataSource.getDoctorById(id)
-            if (doctor != null) {
-                Result.success(doctor)
+            delay(200)
+            val entity = doctorDao.getDoctorById(id)
+            if (entity != null) {
+                val slots = timeSlotDao.getAvailableTimeSlots(id)
+                    .map { it.toModel() }
+                Result.success(entity.toModel(slots))
             } else {
                 Result.failure(Exception("Médico no encontrado"))
             }
@@ -66,9 +84,14 @@ class DoctorRepository {
      */
     suspend fun getDoctorsBySpecialty(specialty: String): Result<List<Doctor>> {
         return try {
-            delay(400)
-            val results = DataSource.doctors.filter { it.specialty == specialty }
-            Result.success(results)
+            delay(300)
+            val entities = doctorDao.getDoctorsBySpecialty(specialty)
+            val doctors = entities.map { entity ->
+                val slots = timeSlotDao.getAvailableTimeSlots(entity.id)
+                    .map { it.toModel() }
+                entity.toModel(slots)
+            }
+            Result.success(doctors)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -78,9 +101,14 @@ class DoctorRepository {
      * Flow para búsqueda en tiempo real
      */
     fun searchDoctorsFlow(query: String): Flow<List<Doctor>> = flow {
-        delay(300) // Debounce
-        val results = DataSource.searchDoctors(query = query)
-        emit(results)
+        delay(300)
+        val entities = doctorDao.searchDoctors(query)
+        val doctors = entities.map { entity ->
+            val slots = timeSlotDao.getAvailableTimeSlots(entity.id)
+                .map { it.toModel() }
+            entity.toModel(slots)
+        }
+        emit(doctors)
     }
 
     /**
@@ -89,9 +117,8 @@ class DoctorRepository {
     suspend fun checkDoctorAvailability(doctorId: Int): Result<Boolean> {
         return try {
             delay(200)
-            val doctor = DataSource.getDoctorById(doctorId)
-            val hasAvailableSlots = doctor?.availableSlots?.any { it.isAvailable } ?: false
-            Result.success(hasAvailableSlots)
+            val count = timeSlotDao.getAvailableSlotsCount(doctorId)
+            Result.success(count > 0)
         } catch (e: Exception) {
             Result.failure(e)
         }

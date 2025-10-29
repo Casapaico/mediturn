@@ -1,18 +1,21 @@
 package com.project.mediturn.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.project.mediturn.data.model.Appointment
 import com.project.mediturn.data.model.Doctor
 import com.project.mediturn.data.repository.AppointmentRepository
+import com.project.mediturn.data.repository.AuthRepository
 import com.project.mediturn.util.Constants
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
-class AppointmentViewModel : ViewModel() {
+class AppointmentViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = AppointmentRepository()
+    private val repository = AppointmentRepository(application.applicationContext)
+    private val authRepository = AuthRepository(application.applicationContext)
 
     // ========== STATE ==========
 
@@ -45,21 +48,23 @@ class AppointmentViewModel : ViewModel() {
     // ========== ACTIONS - CARGAR DATOS ==========
 
     /**
-     * Cargar citas del paciente
+     * Cargar citas del paciente actual
      */
-    fun loadAppointments(patientId: Int = Constants.DEFAULT_PATIENT_ID) {
+    fun loadAppointments() {
         viewModelScope.launch {
             _uiState.value = AppointmentUiState.Loading
-            
+
+            val patientId = authRepository.getSessionPatientId() ?: Constants.DEFAULT_PATIENT_ID
+
             repository.getPatientAppointments(patientId)
                 .onSuccess { appointments ->
                     _appointments.value = appointments
                     _uiState.value = AppointmentUiState.AppointmentsList(
-                        upcoming = appointments.filter { 
-                            it.dateTime.isAfter(LocalDateTime.now()) 
+                        upcoming = appointments.filter {
+                            it.dateTime.isAfter(LocalDateTime.now())
                         },
-                        past = appointments.filter { 
-                            it.dateTime.isBefore(LocalDateTime.now()) 
+                        past = appointments.filter {
+                            it.dateTime.isBefore(LocalDateTime.now())
                         }
                     )
                 }
@@ -77,7 +82,7 @@ class AppointmentViewModel : ViewModel() {
     fun loadAppointmentById(appointmentId: Int) {
         viewModelScope.launch {
             _uiState.value = AppointmentUiState.Loading
-            
+
             repository.getAppointmentById(appointmentId)
                 .onSuccess { appointment ->
                     _selectedAppointment.value = appointment
@@ -139,8 +144,8 @@ class AppointmentViewModel : ViewModel() {
      */
     fun isFormValid(): Boolean {
         return _selectedDoctor.value != null &&
-               _selectedDateTime.value != null &&
-               _reason.value.length >= Constants.MIN_REASON_LENGTH
+                _selectedDateTime.value != null &&
+                _reason.value.length >= Constants.MIN_REASON_LENGTH
     }
 
     // ========== ACTIONS - CRUD ==========
@@ -148,9 +153,7 @@ class AppointmentViewModel : ViewModel() {
     /**
      * Crear nueva cita
      */
-    fun createAppointment(
-        patientId: Int = Constants.DEFAULT_PATIENT_ID
-    ) {
+    fun createAppointment() {
         viewModelScope.launch {
             val doctor = _selectedDoctor.value
             val dateTime = _selectedDateTime.value
@@ -173,6 +176,8 @@ class AppointmentViewModel : ViewModel() {
 
             _uiState.value = AppointmentUiState.Processing
 
+            val patientId = authRepository.getSessionPatientId() ?: Constants.DEFAULT_PATIENT_ID
+
             repository.createAppointment(
                 patientId = patientId,
                 doctor = doctor,
@@ -187,9 +192,9 @@ class AppointmentViewModel : ViewModel() {
                         ActionMessage.Success(Constants.SUCCESS_APPOINTMENT_CREATED)
                     )
                     clearForm()
-                    
+
                     // Recargar lista de citas
-                    loadAppointments(patientId)
+                    loadAppointments()
                 }
                 .onFailure { error ->
                     _uiState.value = AppointmentUiState.Error(
@@ -211,7 +216,7 @@ class AppointmentViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             val appointment = _selectedAppointment.value
-            
+
             if (appointment == null) {
                 _actionMessage.emit(ActionMessage.Error("Cita no encontrada"))
                 return@launch
@@ -233,7 +238,7 @@ class AppointmentViewModel : ViewModel() {
                     _actionMessage.emit(
                         ActionMessage.Success(Constants.SUCCESS_APPOINTMENT_RESCHEDULED)
                     )
-                    
+
                     // Recargar lista
                     loadAppointments()
                 }
@@ -254,7 +259,7 @@ class AppointmentViewModel : ViewModel() {
     fun cancelAppointment(appointmentId: Int) {
         viewModelScope.launch {
             val appointment = _selectedAppointment.value
-            
+
             if (appointment == null) {
                 _actionMessage.emit(ActionMessage.Error("Cita no encontrada"))
                 return@launch
@@ -276,7 +281,7 @@ class AppointmentViewModel : ViewModel() {
                     _actionMessage.emit(
                         ActionMessage.Success(Constants.SUCCESS_APPOINTMENT_CANCELLED)
                     )
-                    
+
                     // Recargar lista
                     loadAppointments()
                 }
@@ -336,20 +341,20 @@ class AppointmentViewModel : ViewModel() {
 sealed class AppointmentUiState {
     object Loading : AppointmentUiState()
     object Processing : AppointmentUiState()
-    
+
     data class AppointmentsList(
         val upcoming: List<Appointment>,
         val past: List<Appointment>
     ) : AppointmentUiState()
-    
+
     data class AppointmentDetail(
         val appointment: Appointment
     ) : AppointmentUiState()
-    
+
     data class Success(
         val appointment: Appointment
     ) : AppointmentUiState()
-    
+
     data class Error(
         val message: String
     ) : AppointmentUiState()

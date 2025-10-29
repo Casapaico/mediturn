@@ -1,13 +1,19 @@
 package com.project.mediturn.data.repository
 
-import com.project.mediturn.data.DataSource
-import com.project.mediturn.data.model.Appointment
-import com.project.mediturn.data.model.AppointmentStatus
-import com.project.mediturn.data.model.Doctor
+import android.content.Context
+import com.project.mediturn.data.local.MediTurnDatabase
+import com.project.mediturn.data.local.mapper.*
+import com.project.mediturn.data.model.*
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
-class AppointmentRepository {
+class AppointmentRepository(context: Context) {
+
+    private val database = MediTurnDatabase.getDatabase(context)
+    private val appointmentDao = database.appointmentDao()
+    private val doctorDao = database.doctorDao()
+    private val timeSlotDao = database.timeSlotDao()
 
     /**
      * Crear nueva cita
@@ -20,20 +26,19 @@ class AppointmentRepository {
         isTelemedicine: Boolean
     ): Result<Appointment> {
         return try {
-            delay(1000) // Simular latencia de red
+            delay(800)
 
-            // Validar que el horario esté disponible
-            val slot = doctor.availableSlots.find {
-                it.dateTime == dateTime && it.isAvailable
-            }
+            // Verificar disponibilidad
+            val dateTimeStr = dateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            val isBooked = appointmentDao.isTimeSlotBooked(doctor.id, dateTimeStr) > 0
 
-            if (slot == null) {
+            if (isBooked) {
                 return Result.failure(Exception("Horario no disponible"))
             }
 
-            // Crear nueva cita
+            // Crear cita
             val newAppointment = Appointment(
-                id = DataSource.appointments.maxOfOrNull { it.id }?.plus(1) ?: 1,
+                id = 0,
                 patientId = patientId,
                 doctor = doctor,
                 dateTime = dateTime,
@@ -43,17 +48,15 @@ class AppointmentRepository {
                 createdAt = LocalDateTime.now()
             )
 
-            // Agregar a la lista de citas
-            DataSource.appointments.add(newAppointment)
+            val appointmentId = appointmentDao.insertAppointment(newAppointment.toEntity())
 
-            // Marcar el slot como no disponible
-            val doctorInList = DataSource.doctors.find { it.id == doctor.id }
-            doctorInList?.availableSlots?.find { it.id == slot.id }?.let {
-                // En una implementación real, actualizaríamos el slot
-                // Por ahora, simplemente devolvemos la cita
+            // Marcar slot como no disponible
+            val slots = timeSlotDao.getTimeSlotsByDoctor(doctor.id)
+            slots.find { it.dateTime == dateTimeStr }?.let { slot ->
+                timeSlotDao.markTimeSlotAsUnavailable(slot.id)
             }
 
-            Result.success(newAppointment)
+            Result.success(newAppointment.copy(id = appointmentId.toInt()))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -64,10 +67,14 @@ class AppointmentRepository {
      */
     suspend fun getPatientAppointments(patientId: Int): Result<List<Appointment>> {
         return try {
-            delay(600)
-            val appointments = DataSource.appointments
-                .filter { it.patientId == patientId }
-                .sortedBy { it.dateTime }
+            delay(500)
+            val entities = appointmentDao.getAppointmentsByPatient(patientId)
+            val appointments = entities.map { entity ->
+                val doctor = doctorDao.getDoctorById(entity.doctorId)
+                val slots = timeSlotDao.getAvailableTimeSlots(entity.doctorId)
+                    .map { it.toModel() }
+                entity.toModel(doctor!!.toModel(slots))
+            }
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
@@ -79,9 +86,17 @@ class AppointmentRepository {
      */
     suspend fun getUpcomingAppointments(patientId: Int): Result<List<Appointment>> {
         return try {
-            delay(500)
-            val appointments = DataSource.getUpcomingAppointments()
-                .filter { it.patientId == patientId }
+            delay(400)
+            val currentDateTime = LocalDateTime.now()
+                .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+            val entities = appointmentDao.getUpcomingAppointments(patientId, currentDateTime)
+            val appointments = entities.map { entity ->
+                val doctor = doctorDao.getDoctorById(entity.doctorId)
+                val slots = timeSlotDao.getAvailableTimeSlots(entity.doctorId)
+                    .map { it.toModel() }
+                entity.toModel(doctor!!.toModel(slots))
+            }
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
@@ -93,9 +108,17 @@ class AppointmentRepository {
      */
     suspend fun getPastAppointments(patientId: Int): Result<List<Appointment>> {
         return try {
-            delay(500)
-            val appointments = DataSource.getPastAppointments()
-                .filter { it.patientId == patientId }
+            delay(400)
+            val currentDateTime = LocalDateTime.now()
+                .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+            val entities = appointmentDao.getPastAppointments(patientId, currentDateTime)
+            val appointments = entities.map { entity ->
+                val doctor = doctorDao.getDoctorById(entity.doctorId)
+                val slots = timeSlotDao.getAvailableTimeSlots(entity.doctorId)
+                    .map { it.toModel() }
+                entity.toModel(doctor!!.toModel(slots))
+            }
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
@@ -108,9 +131,12 @@ class AppointmentRepository {
     suspend fun getAppointmentById(appointmentId: Int): Result<Appointment> {
         return try {
             delay(300)
-            val appointment = DataSource.getAppointmentById(appointmentId)
-            if (appointment != null) {
-                Result.success(appointment)
+            val entity = appointmentDao.getAppointmentById(appointmentId)
+            if (entity != null) {
+                val doctor = doctorDao.getDoctorById(entity.doctorId)
+                val slots = timeSlotDao.getAvailableTimeSlots(entity.doctorId)
+                    .map { it.toModel() }
+                Result.success(entity.toModel(doctor!!.toModel(slots)))
             } else {
                 Result.failure(Exception("Cita no encontrada"))
             }
@@ -127,34 +153,38 @@ class AppointmentRepository {
         newDateTime: LocalDateTime
     ): Result<Appointment> {
         return try {
-            delay(800)
+            delay(600)
 
-            val appointment = DataSource.appointments.find { it.id == appointmentId }
+            val appointmentEntity = appointmentDao.getAppointmentById(appointmentId)
                 ?: return Result.failure(Exception("Cita no encontrada"))
 
-            // Validar que el nuevo horario esté disponible
-            val doctor = appointment.doctor
-            val slot = doctor.availableSlots.find {
-                it.dateTime == newDateTime && it.isAvailable
-            }
+            val dateTimeStr = newDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            val isBooked = appointmentDao.isTimeSlotBooked(appointmentEntity.doctorId, dateTimeStr) > 0
 
-            if (slot == null) {
+            if (isBooked) {
                 return Result.failure(Exception("Horario no disponible"))
             }
 
-            // Actualizar la cita
-            val updatedAppointment = appointment.copy(
-                dateTime = newDateTime,
-                status = AppointmentStatus.PENDING
-            )
-
-            // Reemplazar en la lista
-            val index = DataSource.appointments.indexOfFirst { it.id == appointmentId }
-            if (index != -1) {
-                DataSource.appointments[index] = updatedAppointment
+            // Liberar slot anterior
+            val oldSlots = timeSlotDao.getTimeSlotsByDoctor(appointmentEntity.doctorId)
+            oldSlots.find { it.dateTime == appointmentEntity.dateTime }?.let { slot ->
+                timeSlotDao.markTimeSlotAsAvailable(slot.id)
             }
 
-            Result.success(updatedAppointment)
+            // Marcar nuevo slot como ocupado
+            oldSlots.find { it.dateTime == dateTimeStr }?.let { slot ->
+                timeSlotDao.markTimeSlotAsUnavailable(slot.id)
+            }
+
+            // Actualizar cita
+            appointmentDao.rescheduleAppointment(appointmentId, dateTimeStr)
+
+            val updatedEntity = appointmentDao.getAppointmentById(appointmentId)!!
+            val doctor = doctorDao.getDoctorById(updatedEntity.doctorId)
+            val slots = timeSlotDao.getAvailableTimeSlots(updatedEntity.doctorId)
+                .map { it.toModel() }
+
+            Result.success(updatedEntity.toModel(doctor!!.toModel(slots)))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -165,25 +195,26 @@ class AppointmentRepository {
      */
     suspend fun cancelAppointment(appointmentId: Int): Result<Appointment> {
         return try {
-            delay(600)
+            delay(500)
 
-            val appointment = DataSource.appointments.find { it.id == appointmentId }
+            val appointmentEntity = appointmentDao.getAppointmentById(appointmentId)
                 ?: return Result.failure(Exception("Cita no encontrada"))
 
-            // Actualizar el estado
-            val cancelledAppointment = appointment.copy(
-                status = AppointmentStatus.CANCELLED
-            )
-
-            // Reemplazar en la lista
-            val index = DataSource.appointments.indexOfFirst { it.id == appointmentId }
-            if (index != -1) {
-                DataSource.appointments[index] = cancelledAppointment
+            // Liberar slot
+            val slots = timeSlotDao.getTimeSlotsByDoctor(appointmentEntity.doctorId)
+            slots.find { it.dateTime == appointmentEntity.dateTime }?.let { slot ->
+                timeSlotDao.markTimeSlotAsAvailable(slot.id)
             }
 
-            // Liberar el slot (en implementación real)
+            // Actualizar estado
+            appointmentDao.updateAppointmentStatus(appointmentId, AppointmentStatus.CANCELLED.name)
 
-            Result.success(cancelledAppointment)
+            val updatedEntity = appointmentDao.getAppointmentById(appointmentId)!!
+            val doctor = doctorDao.getDoctorById(updatedEntity.doctorId)
+            val docSlots = timeSlotDao.getAvailableTimeSlots(updatedEntity.doctorId)
+                .map { it.toModel() }
+
+            Result.success(updatedEntity.toModel(doctor!!.toModel(docSlots)))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -194,21 +225,15 @@ class AppointmentRepository {
      */
     suspend fun confirmAppointment(appointmentId: Int): Result<Appointment> {
         return try {
-            delay(500)
+            delay(400)
+            appointmentDao.updateAppointmentStatus(appointmentId, AppointmentStatus.CONFIRMED.name)
 
-            val appointment = DataSource.appointments.find { it.id == appointmentId }
-                ?: return Result.failure(Exception("Cita no encontrada"))
+            val entity = appointmentDao.getAppointmentById(appointmentId)!!
+            val doctor = doctorDao.getDoctorById(entity.doctorId)
+            val slots = timeSlotDao.getAvailableTimeSlots(entity.doctorId)
+                .map { it.toModel() }
 
-            val confirmedAppointment = appointment.copy(
-                status = AppointmentStatus.CONFIRMED
-            )
-
-            val index = DataSource.appointments.indexOfFirst { it.id == appointmentId }
-            if (index != -1) {
-                DataSource.appointments[index] = confirmedAppointment
-            }
-
-            Result.success(confirmedAppointment)
+            Result.success(entity.toModel(doctor!!.toModel(slots)))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -220,20 +245,14 @@ class AppointmentRepository {
     suspend fun completeAppointment(appointmentId: Int): Result<Appointment> {
         return try {
             delay(400)
+            appointmentDao.updateAppointmentStatus(appointmentId, AppointmentStatus.COMPLETED.name)
 
-            val appointment = DataSource.appointments.find { it.id == appointmentId }
-                ?: return Result.failure(Exception("Cita no encontrada"))
+            val entity = appointmentDao.getAppointmentById(appointmentId)!!
+            val doctor = doctorDao.getDoctorById(entity.doctorId)
+            val slots = timeSlotDao.getAvailableTimeSlots(entity.doctorId)
+                .map { it.toModel() }
 
-            val completedAppointment = appointment.copy(
-                status = AppointmentStatus.COMPLETED
-            )
-
-            val index = DataSource.appointments.indexOfFirst { it.id == appointmentId }
-            if (index != -1) {
-                DataSource.appointments[index] = completedAppointment
-            }
-
-            Result.success(completedAppointment)
+            Result.success(entity.toModel(doctor!!.toModel(slots)))
         } catch (e: Exception) {
             Result.failure(e)
         }

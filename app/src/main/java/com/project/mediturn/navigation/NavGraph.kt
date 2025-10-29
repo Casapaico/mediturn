@@ -45,6 +45,12 @@ fun NavGraph(
                 },
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                // ✅ AGREGADO: Navegación al Home después del registro
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
                 }
             )
         }
