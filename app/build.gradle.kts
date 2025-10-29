@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp") version "2.0.21-1.0.27"
 }
 
 android {
@@ -44,7 +45,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation( "androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
 
@@ -71,8 +72,20 @@ dependencies {
     // Coil para imágenes
     implementation("io.coil-kt:coil-compose:2.5.0")
 
+    // Swipe Refresh
     implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
 
+    // ⭐ ROOM DATABASE
+    val roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
+
+    // ⭐ DATASTORE (para preferencias)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // ⭐ SECURITY (para encriptar contraseñas)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
